@@ -1,3 +1,7 @@
+# other
+.*
+
+# java
 # Compiled class file
 *.class
 
