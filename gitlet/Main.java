@@ -1,7 +1,7 @@
 package gitlet;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author krmmzs
  */
 public class Main {
 
@@ -19,6 +19,21 @@ public class Main {
                 // TODO: handle the `add [filename]` command
                 break;
             // TODO: FILL THE REST IN
+        }
+    }
+
+    /**
+     * Checks the number of arguments versus the expected number,
+     * throws a RuntimeException if they do not match.
+     *
+     * @param cmd Name of command you are validating
+     * @param args Argument array from command line
+     * @param n Number of expected arguments
+     */
+    public static void validateNumArgs(String cmd, String[] args, int n) {
+        if (args.length != n) {
+            throw new RuntimeException(
+                String.format("Invalid number of arguments for: %s.", cmd));
         }
     }
 }

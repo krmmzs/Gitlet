@@ -6,24 +6,28 @@ import static gitlet.Utils.*;
 // TODO: any imports you need here
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
  *
- *  @author TODO
+ *  @author krmmzs
  */
 public class Repository {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
-     */
 
-    /** The current working directory. */
+    /** The current working directory(work tree). */
     public static final File CWD = new File(System.getProperty("user.dir"));
-    /** The .gitlet directory. */
+    /** The .gitlet directory.(worktree/.git) */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+    /** The staging directory, restores string Blobs */
+    public static final File STAGING_DIR = join(GITLET_DIR, "staging");
+    /**  */
+    public static final File STAGE = join(GITLET_DIR, "stage");
 
     /* TODO: fill in the rest of this class. */
+
+
+    /* TODO:checks
+     *
+     *
+     *
+     *
+     *
+     * */
 }

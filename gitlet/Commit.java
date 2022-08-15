@@ -8,7 +8,7 @@ import java.util.Date; // TODO: You'll likely use this in this class
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ *  @author krmmzs
  */
 public class Commit {
     /**
