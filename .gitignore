@@ -1,4 +1,13 @@
-# other
+# my habbit for project
+temp/
+
+# medio
+*.mp4
+*.png
+*.jpeg
+*.mp3
+
+# dotfile
 .*
 !/.gitignore
 
