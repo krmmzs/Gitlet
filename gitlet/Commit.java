@@ -1,5 +1,6 @@
 package gitlet;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date; // Represents Time.
@@ -58,5 +59,28 @@ public class Commit implements Serializable{
         this.blobs = new HashMap<>();
     }
 
-    // public Commit(String message, List<String> parents, )
+    public Commit(String message, List<String> parents, Stage stage) {
+        this.message = message;
+        this.timestamp = new Date();
+        this.parents = parents;
+        this.blobs = parents[0].blobs;
+
+        this.blobs = getCommitFromId(parents.get(0)).getBlobs();
+    }
+
+    public String getID() {
+        return this.id;
+    }
+
+    public HashMap<String, String> getBlobs() {
+        return this.blobs;
+    }
+
+    private getCommitFromId(String commitId) {
+        File file = join(Repository.COMMIT_DIR, commitId);
+        if (commitId.equals("null") || !file.exists()) {
+            return null;
+        }
+        return Utils.readObject(file, Commit.class);
+    }
 }
