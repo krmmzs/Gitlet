@@ -6,11 +6,19 @@ import java.util.ArrayList;
 import java.util.Date; // Represents Time.
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import static gitlet.Utils.*;
+
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
+ *
+ *  Having our metadata consist only of
+ *  a timestamp and log message. A commit, therefore,
+ *  will consist of a log message, timestamp, a mapping 
+ *  of file names to blob references, a parent reference,
+ *  and (for merges) a second parent reference.
  *
  *  @author krmmzs
  */
@@ -43,12 +51,7 @@ public class Commit implements Serializable{
      * filename, blob's id.
      * <pre>
      */
-    private final Map<String, String> blobs;
-
-    /**
-     * The file of this instance from SHA1 id;
-     */
-    private final File file;
+    private final HashMap<String, String> blobs;
 
 
     public Commit() {
@@ -63,24 +66,37 @@ public class Commit implements Serializable{
         this.message = message;
         this.timestamp = new Date();
         this.parents = parents;
-        this.blobs = parents[0].blobs;
-
         this.blobs = getCommitFromId(parents.get(0)).getBlobs();
-    }
 
-    public String getID() {
-        return this.id;
+        for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
+            this.blobs.put(entry.getKey(), entry.getValue());
+        }
+
+        for (String filename : stage.getRemoved()) {
+            blobs.remove(filename);
+        }
+
+        this.id = sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
     }
 
     public HashMap<String, String> getBlobs() {
         return this.blobs;
     }
 
-    private getCommitFromId(String commitId) {
-        File file = join(Repository.COMMIT_DIR, commitId);
-        if (commitId.equals("null") || !file.exists()) {
-            return null;
-        }
-        return Utils.readObject(file, Commit.class);
-    }
+	public String getMessage() {
+		return this.message;
+	}
+
+	public Date getTimestamp() {
+		return this.timestamp;
+	}
+
+	public String getId() {
+		return this.id;
+	}
+
+	public List<String> getParents() {
+		return this.parents;
+	}
+
 }

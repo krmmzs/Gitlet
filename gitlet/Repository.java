@@ -52,16 +52,37 @@ public class Repository {
      */
     public static final File REMOTES_DIR = join(REFS_DIR, "remotes");
 
+    /**
+     * stores current branch's name if it points to tip
+     */
+    public static File HEAD;
+    // Note that in Gitlet, there is no way to be in a detached head state
+    
 
-    /* TODO:check
-     *
-     *
-     *
-     *
-     *
-     * */
+    public static File CONFIG;
+
+
     public static void init() {
         // create directory (.gitlet)
+        createInitDir();
+
+        // inital commit
+        Commit initialCommit = new Commit();
+        writeCommitToFile(initialCommit);
+
+        // create Master
+        // create HEAD
+        String id = initialCommit.getId();
+        String branchName = "master";
+        File master = join(HEADS_DIR, branchName);
+        writeContents(master, id); // .gitlet/refs/heads/master
+        writeContents(HEAD, branchName); // .gitlet/HEAD
+        
+        // cretae config
+        writeContents(CONFIG);
+    }
+
+    private static void createInitDir() {
         GITLET_DIR.mkdir();
         STAGING_DIR.mkdir();
         writeObject(STAGE, new Stage());
@@ -69,13 +90,16 @@ public class Repository {
         COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
-        REFS_DIR.mkdir();
-
-        //TODO: inital commit
-
+        // REMOTES_DIR.mkdir();
     }
 
-    public static void checkIfInitDirectoryExists() {
 
+    /**
+     * @param commit Commit Object which will be Serialized.
+     */
+    private static void writeCommitToFile(Commit commit) {
+        File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
+        writeObject(file, commit);
     }
+
 }

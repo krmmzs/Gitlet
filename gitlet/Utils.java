@@ -234,4 +234,31 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
+
+
+    /**
+     * Print a message and exit with status code 0.
+     *
+     * @param message String to print
+     * @param args Arguments referenced by the format specifiers in the format string
+     */
+    public static void exit(String message, Object... args) {
+        message(message, args);
+        System.exit(0);
+    }
+
+
+    /**
+     * <pre>
+     * id -> commit Object.
+     * Determine if the file is in the commit folder.
+     * <pre>
+     */
+    public static Commit getCommitFromId(String commitId) {
+        File file = join(Repository.COMMIT_DIR, commitId);
+        if (commitId.equals("null") || !file.exists()) {
+            return null;
+        }
+        return readObject(file, Commit.class);
+    }
 }

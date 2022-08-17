@@ -19,9 +19,11 @@ public class Stage implements Serializable {
     private Map<String, String> added;
 
     /**
+     * <pre>
      * Staged for removal.
      *
      * <filename>
+     * <pre>
      */
     private Set<String> removed;
 
@@ -29,4 +31,20 @@ public class Stage implements Serializable {
         added = new HashMap<>();
         removed = new HashSet<>();
     }
+
+	public Map<String, String> getAdded() {
+		return this.added;
+	}
+
+	public void setAdded(Map<String, String> added) {
+		this.added = added;
+	}
+
+	public Set<String> getRemoved() {
+		return this.removed;
+	}
+
+	public void setRemoved(Set<String> removed) {
+		this.removed = removed;
+	}
 }
