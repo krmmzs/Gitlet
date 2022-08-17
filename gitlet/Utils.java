@@ -254,11 +254,11 @@ class Utils {
      * Determine if the file is in the commit folder.
      * <pre>
      */
-    public static Commit getCommitFromId(String commitId) {
-        File file = join(Repository.COMMIT_DIR, commitId);
-        if (commitId.equals("null") || !file.exists()) {
-            return null;
-        }
-        return readObject(file, Commit.class);
-    }
+    // public static Commit getCommitFromId(String commitId) {
+    //     File file = join(Repository.COMMIT_DIR, commitId);
+    //     if (commitId.equals("null") || !file.exists()) {
+    //         return null;
+    //     }
+    //     return readObject(file, Commit.class);
+    // }
 }

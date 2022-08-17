@@ -26,10 +26,9 @@
 
 ```
 .gitlet
-	-- staging(replace index)
 	-- [stage]
-	-- blobs
-	-- commits
+    -- objects
+        -- blobs and commits
 	-- refs
 		-- heads -> [master][branch name]
 		-- remotes

@@ -17,36 +17,85 @@ public class Blob implements Serializable {
     /**
      * The file name of the Bolb.
      */
-    private final String filename;
+    private final File source;
 
     /**
      * The content of the Bolb.
      */
     private final byte[] content;
 
-    public Blob(String filename, File CWD) {
-        this.filename = filename;
-        File file = join(CWD, filename);
-        if (file.exists()) {
-            this.content = readContents(file);
-            this.id = sha1(filename, content);
+    /**
+     * The file of this instance with the path generated from SHA1 id.
+     */
+    private final File saveFile;
+
+    /**
+     * Cache of file path.
+     */
+    private final String filePath = null;
+
+    /**
+     * Cache of file name.
+     */
+    private final String fileName = null;
+
+    public Blob(File source) {
+        this.source = source;
+        this.content = generateContents();
+        this.filePath = source.getPath();
+        id = this.generateId();
+        this.saveFile = generateSaveFile();
+    }
+
+	public String getId() {
+		return id;
+	}
+
+	public byte[] getContent() {
+		return content;
+	}
+
+	public File getSource() {
+		return source;
+	}
+
+	public File getSaveFile() {
+		return saveFile;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+    public String getFileName() {
+        if (fileName == null) {
+            fileName = source.getName();
         }
-        else {
-            this.content = null;
-            this.id = sha1(filename);
-        }
+		return fileName;
+	}
+
+    // Persistence
+    private byte[] readFile() {
+        return readContents(source);
     }
 
-    public String getId() {
-        return id;
+    private void writeFile() {
+        writeObject(source, this);
     }
 
-    public String getFilename() {
-        return filename;
+
+	private String generateId() {
+        return sha1(filePath, content);
     }
 
-    public byte[] getContent() {
-        return content;
+    private byte[] generateContents() {
+        readContents(source);
     }
 
+    /**
+     * @return save filename:id File.(like git)
+     */
+    private File generateSaveFile() {
+        return join(Repository.OBJECTS_DIR, id);
+    }
 }

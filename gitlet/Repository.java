@@ -22,20 +22,25 @@ public class Repository {
     /**
      * The staging directory, restores staging Blobs.
      */
-    public static final File STAGING_DIR = join(GITLET_DIR, "staging");
+    // public static final File STAGING_DIR = join(GITLET_DIR, "staging");
+
     /** 
-     * The stage Object.
+     * The stage Object.(replace index)
      */
     public static final File STAGE = join(GITLET_DIR, "stage");
-    /**
-     * The Objects directory, stores committed blobs.
-     */
-    public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
-    /**
-     * The commits directory.
-     */
-    public static final File COMMIT_DIR = join(GITLET_DIR, "commits");
+    // /**
+    //  * The Objects directory, stores committed blobs.
+    //  */
+    // public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
+    // /**
+    //  * The commits directory.
+    //  */
+    // public static final File COMMIT_DIR = join(GITLET_DIR, "commits");
 
+    /**
+     * The Objects directory, stores commits and blobs.
+     */
+    public static final File OBJECTS_DIR = join(GITLET_DIR, "Objects");
 
     // The branches directory(Mimicking .git).
 
@@ -55,12 +60,9 @@ public class Repository {
     /**
      * stores current branch's name if it points to tip
      */
-    public static File HEAD;
+    public static File HEAD = join(GITLET_DIR, "HEAD");;
     // Note that in Gitlet, there is no way to be in a detached head state
     
-
-    public static File CONFIG;
-
 
     public static void init() {
         // create directory (.gitlet)
@@ -84,13 +86,13 @@ public class Repository {
 
     private static void createInitDir() {
         GITLET_DIR.mkdir();
-        STAGING_DIR.mkdir();
+        // STAGING_DIR.mkdir();
         writeObject(STAGE, new Stage());
-        BLOBS_DIR.mkdir();
-        COMMIT_DIR.mkdir();
+        // BLOBS_DIR.mkdir();
+        // COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
-        // REMOTES_DIR.mkdir();
+        REMOTES_DIR.mkdir();
     }
 
 

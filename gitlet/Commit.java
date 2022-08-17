@@ -44,6 +44,12 @@ public class Commit implements Serializable{
      */
     private final List<String> parents;
 
+
+    /**
+     * The cache of saveFile.
+     */
+    private final File saveFile;
+
     /**
      * <pre>
      * The blobs of this Commit.
@@ -57,26 +63,20 @@ public class Commit implements Serializable{
     public Commit() {
         this.message = "initial commit";
         this.timestamp = new Date(0);
-        this.id = sha1(message, timestamp.toString());
         this.parents = new ArrayList<>(); // need order(first parents... second parents) and better memory than LinkedList.
         this.blobs = new HashMap<>();
+        this.id = generateId();
+        this.saveFile = generateSaveFile();
     }
 
-    public Commit(String message, List<String> parents, Stage stage) {
+    public Commit(String message, List<String> parents, Map<String, String> blobs) {
         this.message = message;
         this.timestamp = new Date();
         this.parents = parents;
-        this.blobs = getCommitFromId(parents.get(0)).getBlobs();
-
-        for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
-            this.blobs.put(entry.getKey(), entry.getValue());
-        }
-
-        for (String filename : stage.getRemoved()) {
-            blobs.remove(filename);
-        }
-
-        this.id = sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
+        this.blobs = blobs;
+        //HACK: There may be order issues
+        this.id = generateId();
+        this.saveFile = generateSaveFile();
     }
 
     public HashMap<String, String> getBlobs() {
@@ -99,4 +99,29 @@ public class Commit implements Serializable{
 		return this.parents;
 	}
 
+	public File getSaveFile() {
+		return saveFile;
+	}
+
+    // Persistence
+    //TODO: design Persistence for Commit.
+
+    /**
+     * @param commit Commit Object which will be Serialized.
+     */
+    private void writeToFile() {
+        if (saveFile == null) {
+        this.saveFile = join(COMMIT_DIR, this.getId()); // now, without Tries firstly...
+        }
+        writeObject(saveFile, this);
+    }
+
+    private File generateSaveFile() {
+        return join(Repository.OBJECTS_DIR, id);
+    }
+
+
+    public String generateId() {
+        return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
+    }
 }
