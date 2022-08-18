@@ -104,24 +104,34 @@ public class Commit implements Serializable{
 	}
 
     // Persistence
-    //TODO: design Persistence for Commit.
 
     /**
      * @param commit Commit Object which will be Serialized.
      */
-    private void writeToFile() {
-        if (saveFile == null) {
-        this.saveFile = join(COMMIT_DIR, this.getId()); // now, without Tries firstly...
-        }
+    public void writeFile() {
         writeObject(saveFile, this);
     }
 
-    private File generateSaveFile() {
+    public void readFile() {
+        readObject(getObjectFile(id), Commit.class);
+    }
+
+    /**
+     * Get a File instance with the path generated from SHA1 id in the objects folder.
+     *
+     * @param id SHA1 id
+     * @return File instance
+     */
+    private File getObjectFile(String id) {
         return join(Repository.OBJECTS_DIR, id);
     }
 
+    private File generateSaveFile() {
+        return join(Repository.OBJECTS_DIR, id); // now, without Tries firstly...
+    }
 
-    public String generateId() {
+
+    private String generateId() {
         return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
     }
 }

@@ -26,6 +26,7 @@
 
 ```
 .gitlet
+    -- stageArea
 	-- [stage]
     -- objects
         -- blobs and commits

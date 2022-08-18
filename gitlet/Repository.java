@@ -19,10 +19,11 @@ public class Repository {
      * The .gitlet directory.(worktree/.git).
      */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+
     /**
      * The staging directory, restores staging Blobs.
      */
-    // public static final File STAGING_DIR = join(GITLET_DIR, "staging");
+    public static final File STAGING_DIR = join(GITLET_DIR, "staging");
 
     /** 
      * The stage Object.(replace index)
@@ -63,6 +64,7 @@ public class Repository {
     public static File HEAD = join(GITLET_DIR, "HEAD");;
     // Note that in Gitlet, there is no way to be in a detached head state
     
+    public static File CONFIG;
 
     public static void init() {
         // create directory (.gitlet)
@@ -70,10 +72,11 @@ public class Repository {
 
         // inital commit
         Commit initialCommit = new Commit();
-        writeCommitToFile(initialCommit);
+        initialCommit.writeFile();
 
         // create Master
         // create HEAD
+        // HACK:maybe could write a Class:Branch
         String id = initialCommit.getId();
         String branchName = "master";
         File master = join(HEADS_DIR, branchName);
@@ -81,13 +84,14 @@ public class Repository {
         writeContents(HEAD, branchName); // .gitlet/HEAD
         
         // cretae config
-        writeContents(CONFIG);
+        writeContents(CONFIG, "");
     }
 
     private static void createInitDir() {
         GITLET_DIR.mkdir();
-        // STAGING_DIR.mkdir();
+        STAGING_DIR.mkdir();
         writeObject(STAGE, new Stage());
+        OBJECTS_DIR.mkdir();
         // BLOBS_DIR.mkdir();
         // COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
@@ -99,9 +103,9 @@ public class Repository {
     /**
      * @param commit Commit Object which will be Serialized.
      */
-    private static void writeCommitToFile(Commit commit) {
-        File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
-        writeObject(file, commit);
-    }
+    // private static void writeCommitToFile(Commit commit) {
+    //     File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
+    //     writeObject(file, commit);
+    // }
 
 }
