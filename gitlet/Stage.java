@@ -1,5 +1,6 @@
 package gitlet;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,7 +15,7 @@ public class Stage implements Serializable {
     /**
      * Staged for addition.
      *
-     * <filename, blob's id>
+     * <file path, blob's id>
      */
     private Map<String, String> added;
 
@@ -22,7 +23,7 @@ public class Stage implements Serializable {
      * <pre>
      * Staged for removal.
      *
-     * <filename>
+     * <file path>
      * <pre>
      */
     private Set<String> removed;
@@ -36,15 +37,7 @@ public class Stage implements Serializable {
 		return this.added;
 	}
 
-	public void setAdded(Map<String, String> added) {
-		this.added = added;
-	}
-
 	public Set<String> getRemoved() {
 		return this.removed;
-	}
-
-	public void setRemoved(Set<String> removed) {
-		this.removed = removed;
 	}
 }

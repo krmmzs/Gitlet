@@ -1,15 +1,17 @@
 package gitlet;
 
-import java.io.File;
+import static gitlet.Utils.join;
+import static gitlet.Utils.sha1;
+
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date; // Represents Time.
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
  *  does at a high level.
@@ -65,15 +67,29 @@ public class Commit implements Serializable{
         this.timestamp = new Date(0);
         this.parents = new ArrayList<>(); // need order(first parents... second parents) and better memory than LinkedList.
         this.blobs = new HashMap<>();
-        this.id = generateId();
+        this.id = sha1(message, timestamp.toString()); // init's id(sha1) is special.
         this.saveFile = generateSaveFile();
     }
 
-    public Commit(String message, List<String> parents, Map<String, String> blobs) {
+    public Commit(String message, List<Commit> parents, Stage stage) {
         this.message = message;
         this.timestamp = new Date();
-        this.parents = parents;
-        this.blobs = blobs;
+        // this.parents = parents;
+        this.parents = new ArrayList<>(2);
+        for (Commit t : parents) {
+            this.parents.add(t.getId());
+        }
+        this.blobs = parents.get(0).getBlobs(); // using first parent blobs
+
+        for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
+            String filename = entry.getKey();
+            String bolbId = entry.getValue();
+            blobs.put(filename, blobId);
+        }
+        for (String filename : stage.getRemoved()) {
+            blobs.remove(filename);
+        }
+        // this.blobs = blobs;
         //HACK: There may be order issues
         this.id = generateId();
         this.saveFile = generateSaveFile();
@@ -103,34 +119,26 @@ public class Commit implements Serializable{
 		return saveFile;
 	}
 
-    // Persistence
-
-    /**
-     * @param commit Commit Object which will be Serialized.
-     */
-    public void writeFile() {
-        writeObject(saveFile, this);
-    }
-
-    public void readFile() {
-        readObject(getObjectFile(id), Commit.class);
+    public String getDateString() {
+        DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+        return df.format(timestamp);
     }
 
     /**
-     * Get a File instance with the path generated from SHA1 id in the objects folder.
+     * Generate saveFile.
      *
-     * @param id SHA1 id
-     * @return File instance
+     * @return SaveFile by id.
      */
-    private File getObjectFile(String id) {
-        return join(Repository.OBJECTS_DIR, id);
-    }
-
     private File generateSaveFile() {
         return join(Repository.OBJECTS_DIR, id); // now, without Tries firstly...
     }
 
 
+    /**
+     * Generate id.
+     *
+     * @return id by message, Timestamp, pearents, blobs.
+     */
     private String generateId() {
         return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
     }

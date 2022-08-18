@@ -3,8 +3,6 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 
-import static gitlet.Utils.*;
-
 /**
  * Blob
  */
@@ -14,10 +12,6 @@ public class Blob implements Serializable {
      */
 
     private final String id;
-    /**
-     * The file name of the Bolb.
-     */
-    private final File source;
 
     /**
      * The content of the Bolb.
@@ -25,26 +19,25 @@ public class Blob implements Serializable {
     private final byte[] content;
 
     /**
-     * The file of this instance with the path generated from SHA1 id.
-     */
-    private final File saveFile;
-
-    /**
-     * Cache of file path.
-     */
-    private final String filePath = null;
-
-    /**
      * Cache of file name.
      */
-    private final String fileName = null;
+    private final String fileName;
 
-    public Blob(File source) {
-        this.source = source;
-        this.content = generateContents();
-        this.filePath = source.getPath();
-        id = this.generateId();
-        this.saveFile = generateSaveFile();
+    /**
+     * construct Blob with file name and where.
+     * @param fileName
+     * @param CWD
+     */
+    public Blob(String fileName, File CWD) {
+        this.fileName = fileName;
+        File file = join(CWD, fileName);
+        if (file.exists()) {
+            this.content = readContents(file);
+            this.id = generateId();
+        } else {
+            this.content = null;
+            this.id = sha1(fileName);
+        }
     }
 
 	public String getId() {
