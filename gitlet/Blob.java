@@ -3,6 +3,8 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 
+import static gitlet.Utils.*;
+
 /**
  * Blob
  */
@@ -48,42 +50,13 @@ public class Blob implements Serializable {
 		return content;
 	}
 
-	public File getSource() {
-		return source;
-	}
+	private String generateId() {
+        return sha1(fileName, content);
+    }
 
-	public File getSaveFile() {
-		return saveFile;
-	}
-
-	public String getFilePath() {
-		return filePath;
-	}
-
-    public String getFileName() {
-        if (fileName == null) {
-            fileName = source.getName();
-        }
+	public String getFileName() {
 		return fileName;
 	}
-
-    // Persistence
-    private byte[] readFile() {
-        return readContents(source);
-    }
-
-    private void writeFile() {
-        writeObject(source, this);
-    }
-
-
-	private String generateId() {
-        return sha1(filePath, content);
-    }
-
-    private byte[] generateContents() {
-        readContents(source);
-    }
 
     /**
      * @return save filename:id File.(like git)
@@ -91,4 +64,5 @@ public class Blob implements Serializable {
     private File generateSaveFile() {
         return join(Repository.OBJECTS_DIR, id);
     }
+
 }

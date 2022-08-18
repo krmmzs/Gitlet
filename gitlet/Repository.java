@@ -104,7 +104,7 @@ public class Repository {
      * @param commit Commit Object which will be Serialized.
      */
     private static void writeCommitToFile(Commit commit) {
-        File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
+        File file = join(OBJECTS_DIR, commit.getId()); // now, without Tries firstly...
         writeObject(file, commit);
     }
 

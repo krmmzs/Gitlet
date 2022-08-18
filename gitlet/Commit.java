@@ -3,6 +3,7 @@ package gitlet;
 import static gitlet.Utils.join;
 import static gitlet.Utils.sha1;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -82,9 +83,9 @@ public class Commit implements Serializable{
         this.blobs = parents.get(0).getBlobs(); // using first parent blobs
 
         for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
-            String filename = entry.getKey();
-            String bolbId = entry.getValue();
-            blobs.put(filename, blobId);
+            String fileName = entry.getKey();
+            String blobId = entry.getValue();
+            blobs.put(fileName, blobId);
         }
         for (String filename : stage.getRemoved()) {
             blobs.remove(filename);
