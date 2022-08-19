@@ -14,10 +14,6 @@ public class Blob implements Serializable {
      */
 
     private final String id;
-    /**
-     * The file name of the Bolb.
-     */
-    private final File source;
 
     /**
      * The content of the Bolb.
@@ -25,26 +21,25 @@ public class Blob implements Serializable {
     private final byte[] content;
 
     /**
-     * The file of this instance with the path generated from SHA1 id.
-     */
-    private final File saveFile;
-
-    /**
-     * Cache of file path.
-     */
-    private final String filePath = null;
-
-    /**
      * Cache of file name.
      */
-    private final String fileName = null;
+    private final String fileName;
 
-    public Blob(File source) {
-        this.source = source;
-        this.content = generateContents();
-        this.filePath = source.getPath();
-        id = this.generateId();
-        this.saveFile = generateSaveFile();
+    /**
+     * construct Blob with file name and where.
+     * @param fileName
+     * @param CWD
+     */
+    public Blob(String fileName, File CWD) {
+        this.fileName = fileName;
+        File file = join(CWD, fileName);
+        if (file.exists()) {
+            this.content = readContents(file);
+            this.id = generateId();
+        } else {
+            this.content = null;
+            this.id = sha1(fileName);
+        }
     }
 
 	public String getId() {
@@ -55,42 +50,13 @@ public class Blob implements Serializable {
 		return content;
 	}
 
-	public File getSource() {
-		return source;
-	}
+	private String generateId() {
+        return sha1(fileName, content);
+    }
 
-	public File getSaveFile() {
-		return saveFile;
-	}
-
-	public String getFilePath() {
-		return filePath;
-	}
-
-    public String getFileName() {
-        if (fileName == null) {
-            fileName = source.getName();
-        }
+	public String getFileName() {
 		return fileName;
 	}
-
-    // Persistence
-    private byte[] readFile() {
-        return readContents(source);
-    }
-
-    private void writeFile() {
-        writeObject(source, this);
-    }
-
-
-	private String generateId() {
-        return sha1(filePath, content);
-    }
-
-    private byte[] generateContents() {
-        readContents(source);
-    }
 
     /**
      * @return save filename:id File.(like git)
@@ -98,4 +64,5 @@ public class Blob implements Serializable {
     private File generateSaveFile() {
         return join(Repository.OBJECTS_DIR, id);
     }
+
 }

@@ -20,6 +20,7 @@ public class Main {
             case "init" -> {
                 validateNumArgs(args, 1);
                 Repository.init();
+                // TODO: Test init
             }
             case "add" -> {
                 // TODO: handle the `add [filename]` command

@@ -3,7 +3,6 @@ package gitlet;
 import java.io.File;
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
 
 /** Represents a gitlet repository.
  *
@@ -67,12 +66,16 @@ public class Repository {
     public static File CONFIG;
 
     public static void init() {
+        if (GITLET_DIR.exists() && GITLET_DIR.isDirectory()) {
+            exit("A Gitlet version-control system already exists in the current directory.");
+        }
         // create directory (.gitlet)
         createInitDir();
 
         // inital commit
         Commit initialCommit = new Commit();
-        initialCommit.writeFile();
+        // initialCommit.saveCommit();
+        writeCommitToFile(initialCommit);
 
         // create Master
         // create HEAD
@@ -82,9 +85,6 @@ public class Repository {
         File master = join(HEADS_DIR, branchName);
         writeContents(master, id); // .gitlet/refs/heads/master
         writeContents(HEAD, branchName); // .gitlet/HEAD
-        
-        // cretae config
-        writeContents(CONFIG, "");
     }
 
     private static void createInitDir() {
@@ -103,9 +103,9 @@ public class Repository {
     /**
      * @param commit Commit Object which will be Serialized.
      */
-    // private static void writeCommitToFile(Commit commit) {
-    //     File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
-    //     writeObject(file, commit);
-    // }
+    private static void writeCommitToFile(Commit commit) {
+        File file = join(OBJECTS_DIR, commit.getId()); // now, without Tries firstly...
+        writeObject(file, commit);
+    }
 
 }
