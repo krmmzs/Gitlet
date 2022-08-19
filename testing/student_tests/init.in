@@ -1,0 +1,10 @@
+# Basic initialization
+> init
+<<<
+E .gitlet
+E .gitlet/staging
+E .gitlet/stage
+E .gitlet/Objects
+E .gitlet/refs
+E .gitlet/refs/heads
+E .gitlet/refs/remotes
