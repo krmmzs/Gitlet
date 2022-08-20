@@ -273,7 +273,7 @@ public class Repository {
 
         sb.append("=== Removed Files ===\n");
         for (String fileName : stage.getRemoved()) {
-            sb.append(fileName);
+            sb.append(fileName + "\n");
         }
         sb.append("\n");
 
