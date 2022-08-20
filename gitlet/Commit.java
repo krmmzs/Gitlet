@@ -8,8 +8,10 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Date; // Represents Time.
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -66,7 +68,7 @@ public class Commit implements Serializable{
     public Commit() {
         this.message = "initial commit";
         this.timestamp = new Date(0);
-        this.parents = new ArrayList<>(); // need order(first parents... second parents) and better memory than LinkedList.
+        this.parents = new LinkedList<>();
         this.blobs = new HashMap<>();
         this.id = sha1(message, timestamp.toString()); // init's id(sha1) is special.
         this.saveFile = generateSaveFile();
@@ -87,8 +89,8 @@ public class Commit implements Serializable{
             String blobId = entry.getValue();
             blobs.put(fileName, blobId); // if same fileName, different blobId, will update
         }
-        for (String filename : stage.getRemoved()) {
-            blobs.remove(filename);
+        for (String fileName : stage.getRemoved()) {
+            blobs.remove(fileName);
         }
         // this.blobs = blobs;
         //HACK: There may be order issues
@@ -131,7 +133,7 @@ public class Commit implements Serializable{
      * @return SaveFile by id.
      */
     private File generateSaveFile() {
-        return join(Repository.OBJECTS_DIR, id); // now, without Tries firstly...
+        return join(Repository.COMMIT_DIR, id); // now, without Tries firstly...
     }
 
 
@@ -142,5 +144,24 @@ public class Commit implements Serializable{
      */
     private String generateId() {
         return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
+    }
+
+    public String getFirstParentId() {
+        if (parents.isEmpty()) {
+            return "null";
+        }
+        return parents.get(0);
+    }
+
+    public String getCommitAsString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("===\n");
+        sb.append("commit " + this.id + "\n");
+        if (parents.size() == 2) {
+            sb.append("Merge: " + parents.get(0).substring(0, 7) + " " + parents.get(1).substring(0, 7) + "\n");
+        }
+        sb.append("Date: " + this.getDateString() + "\n");
+        sb.append(this.message + "\n\n");
+        return sb.toString();
     }
 }

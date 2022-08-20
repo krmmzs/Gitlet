@@ -1,6 +1,6 @@
 package gitlet;
 
-import static gitlet.Utils.exit;
+import static gitlet.Utils.*;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author krmmzs
@@ -47,6 +47,26 @@ public class Main {
                 validateNumArgs(args, 2);
                 Repository.checkInit();
                 Repository.rm(args[1]);
+            }
+            case "log" -> {
+                validateNumArgs(args, 1);
+                Repository.checkInit();
+                Repository.log();
+            }
+            case "global-log" -> {
+                validateNumArgs(args, 1);
+                Repository.checkInit();
+                Repository.global_log();
+            }
+            case "find" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.find(args[1]);
+            }
+            case "status" -> {
+                validateNumArgs(args, 1);
+                Repository.checkInit();
+                Repository.status();
             }
             default -> exit("No command with that name exists.");
         }
