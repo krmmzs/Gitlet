@@ -240,7 +240,7 @@ public class Repository {
         for (String fileName: fileNames) {
             Commit commit = getCommitFromId(fileName);
             if (commit.getMessage().contains(msg)) {
-                sb.append(commit.getMessage());
+                sb.append(commit.getId() + "\n");
             }
         }
         if (sb.length() == 0) {
