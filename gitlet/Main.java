@@ -53,7 +53,11 @@ public class Main {
                 Repository.checkInit();
                 Repository.log();
             }
-
+            case "global-log" -> {
+                validateNumArgs(args, 1);
+                Repository.checkInit();
+                Repository.global_log();
+            }
             default -> exit("No command with that name exists.");
         }
     }

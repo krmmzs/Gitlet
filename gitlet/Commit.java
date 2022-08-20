@@ -131,7 +131,7 @@ public class Commit implements Serializable{
      * @return SaveFile by id.
      */
     private File generateSaveFile() {
-        return join(Repository.OBJECTS_DIR, id); // now, without Tries firstly...
+        return join(Repository.COMMIT_DIR, id); // now, without Tries firstly...
     }
 
 

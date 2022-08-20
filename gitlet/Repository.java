@@ -34,19 +34,20 @@ public class Repository {
      * The stage Object.(replace index)
      */
     public static final File STAGE = join(GITLET_DIR, "stage");
-    // /**
-    //  * The Objects directory, stores committed blobs.
-    //  */
-    // public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
-    // /**
-    //  * The commits directory.
-    //  */
-    // public static final File COMMIT_DIR = join(GITLET_DIR, "commits");
 
     /**
      * The Objects directory, stores commits and blobs.
      */
     public static final File OBJECTS_DIR = join(GITLET_DIR, "Objects");
+
+    /**
+     * The Objects directory, stores committed blobs.
+     */
+    public static final File BLOBS_DIR = join(OBJECTS_DIR, "blobs");
+    /**
+     * The commits directory.
+     */
+    public static final File COMMIT_DIR = join(OBJECTS_DIR, "commits");
 
     // The branches directory(Mimicking .git).
 
@@ -100,8 +101,8 @@ public class Repository {
         STAGING_DIR.mkdir();
         writeObject(STAGE, new Stage());
         OBJECTS_DIR.mkdir();
-        // BLOBS_DIR.mkdir();
-        // COMMIT_DIR.mkdir();
+        BLOBS_DIR.mkdir();
+        COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
         REMOTES_DIR.mkdir();
@@ -223,12 +224,22 @@ public class Repository {
         System.out.print(sb);
     }
 
+    public static void global_log() {
+        StringBuffer sb = new StringBuffer();
+        List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
+        for (String fileName : fileNames) {
+            Commit commit = getCommitFromId(fileName);
+            sb.append(commit.getCommitAsString());
+        }
+        System.out.println(sb);
+    }
+
 
     /**
      * @param commit Commit Object which will be Serialized.
      */
     private static void writeCommitToFile(Commit commit) {
-        File file = join(OBJECTS_DIR, commit.getId()); // now, without Tries firstly...
+        File file = join(COMMIT_DIR, commit.getId()); // now, without Tries firstly...
         writeObject(file, commit);
     }
 
@@ -265,7 +276,7 @@ public class Repository {
     }
 
     private static Commit getCommitFromId(String commitId) {
-        File file = join(OBJECTS_DIR, commitId);
+        File file = join(COMMIT_DIR, commitId);
         if (commitId.equals("null") || !file.exists()) {
             return null;
         }
@@ -308,7 +319,7 @@ public class Repository {
         if (files == null) {
             return;
         }
-        Path targetDir = OBJECTS_DIR.toPath();
+        Path targetDir = BLOBS_DIR.toPath();
         for (File file: files) {
             Path source = file.toPath();
             try {
