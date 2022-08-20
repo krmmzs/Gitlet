@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.*;
 
 
 /** Represents a gitlet repository.
@@ -172,11 +173,12 @@ public class Repository {
         // TODO: get the stage
         // gettheHeadCommit
         Commit head = getHead();
-        commitWith(msg, list.of(head));
+        commitWith(msg, List.of(head));
     }
 
     public static void rm(String fileName) {
-        File = join(CWD, fileName);
+        File file = join(CWD, fileName);
+
         Commit head = getHead();
         Stage stage = readStage();
 
@@ -187,7 +189,27 @@ public class Repository {
             exit("No reason to remove the file.");
         }
 
-        // TODO: Unstage the file if it is currently staged for addition.
+        // Unstage the file if it is currently staged for addition.
+        if (!stageBlobId.equals("")) {
+            stage.getAdded().remove(fileName);
+        } else {
+            // stage it for removal
+            stage.getRemoved().add(fileName);
+        }
+
+        Blob blob = new Blob(fileName, CWD);
+        String blobId = blob.getId();
+        // If the file is tracked in the current
+        // commit, stage it for removal(done in last condition)
+        // and remove the file from the working directory
+        // if the user has not already done so
+        // HACK: blob.exists maybe could without judgement
+        if (blobId.equals(headBlobId) && blob.exists()) {
+            // remove the file from the working directory
+            restrictedDelete(file);
+        }
+
+        writeStage(stage);
     }
 
 
@@ -251,7 +273,7 @@ public class Repository {
         writeObject(join(STAGING_DIR, blobId), blob);
     }
 
-    private static void commtWith(String msg, List<Commit> parents) {
+    private static void commitWith(String msg, List<Commit> parents) {
         Stage stage = readStage();
         // If no files have been staged, abort
         if (stage.isEmpty()) {
@@ -289,7 +311,7 @@ public class Repository {
         writeStage(new Stage());
     }
 
-    private void updateBranch(Commit commit) {
+    private static void updateBranch(Commit commit) {
         String commitId = commit.getId();
         String branchName = getHeadBranchName();
         File branch = getBranchFile(branchName);

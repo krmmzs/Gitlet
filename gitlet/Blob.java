@@ -58,6 +58,10 @@ public class Blob implements Serializable {
 		return fileName;
 	}
 
+    public boolean exists() {
+        return this.content != null;
+    }
+
     /**
      * @return save filename:id File.(like git)
      */
