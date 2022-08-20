@@ -234,6 +234,21 @@ public class Repository {
         System.out.println(sb);
     }
 
+    public static void find(String msg) {
+        StringBuffer sb = new StringBuffer();
+        List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
+        for (String fileName: fileNames) {
+            Commit commit = getCommitFromId(fileName);
+            if (commit.getMessage().contains(msg)) {
+                sb.append(commit.getMessage());
+            }
+        }
+        if (sb.length() == 0) {
+            exit("Found no commit with that message.");
+        }
+        System.out.println(sb);
+    }
+
 
     /**
      * @param commit Commit Object which will be Serialized.

@@ -58,6 +58,11 @@ public class Main {
                 Repository.checkInit();
                 Repository.global_log();
             }
+            case "find" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.find(args[1]);
+            }
             default -> exit("No command with that name exists.");
         }
     }
