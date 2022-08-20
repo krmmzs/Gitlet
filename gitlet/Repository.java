@@ -249,6 +249,42 @@ public class Repository {
         System.out.println(sb);
     }
 
+    public static void status() {
+        StringBuffer sb = new StringBuffer();
+
+        sb.append("=== Branches ===\n");
+        String headBranch = readContentsAsString(HEAD);
+        List<String> branches = plainFilenamesIn(HEADS_DIR);
+        for (String branch : branches) {
+            if (branch.equals(headBranch)) {
+                sb.append("*" + branch + "\n");
+            } else {
+                sb.append(branch + "\n");
+            }
+        }
+        sb.append("\n");
+
+        Stage stage = readStage();
+        sb.append("=== Staged Files ===\n");
+        for (String fileName : stage.getAdded().keySet()) {
+            sb.append(fileName + "\n");
+        }
+        sb.append("\n");
+
+        sb.append("=== Removed Files ===\n");
+        for (String fileName : stage.getRemoved()) {
+            sb.append(fileName);
+        }
+        sb.append("\n");
+
+        // TODO: status ec
+        sb.append("=== Modifications Not Staged For Commit ===\n");
+        sb.append("\n");
+        sb.append("=== Untracked Files ===\n");
+        sb.append("\n");
+
+        System.out.println(sb);
+    } 
 
     /**
      * @param commit Commit Object which will be Serialized.
