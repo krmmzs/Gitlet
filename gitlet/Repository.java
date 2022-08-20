@@ -388,6 +388,6 @@ public class Repository {
         String commitId = commit.getId();
         String branchName = getHeadBranchName();
         File branch = getBranchFile(branchName);
-        writeContents(branch, commit);
+        writeContents(branch, commitId);
     }
 }
