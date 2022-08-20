@@ -85,7 +85,7 @@ public class Commit implements Serializable{
         for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
             String fileName = entry.getKey();
             String blobId = entry.getValue();
-            blobs.put(fileName, blobId);
+            blobs.put(fileName, blobId); // if same fileName, different blobId, will update
         }
         for (String filename : stage.getRemoved()) {
             blobs.remove(filename);

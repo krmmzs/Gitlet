@@ -38,6 +38,16 @@ public class Main {
                 Repository.checkInit();
                 Repository.add(args[1]);
             }
+            case "commit" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.commit(args[1]);
+            }
+            case "rm" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.rm(args[1]);
+            }
             default -> exit("No command with that name exists.");
         }
     }

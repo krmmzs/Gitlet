@@ -1,7 +1,12 @@
 package gitlet;
 
-import java.io.File;
 import static gitlet.Utils.*;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 
 /** Represents a gitlet repository.
@@ -122,6 +127,9 @@ public class Repository {
             exit("Not in an initialized Gitlet directory.");
         }
 
+        Blob blob = new Blob(fileName, CWD); // using file name to instance this blob.
+        String blobId = blob.getId();
+
         // gettheHeadCommit
         Commit head = getHead();
         // get the Stage
@@ -129,9 +137,6 @@ public class Repository {
 
         String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
         String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
-
-        Blob blob = new Blob(fileName, CWD); // using file name to instance this blob.
-        String blobId = blob.getId();
 
         // HACK: maybe have more edge case.
         // the current working version of the file is identical to 
@@ -157,6 +162,32 @@ public class Repository {
             stage.add(fileName, blobId);
             writeStage(stage);
         }
+    }
+
+    public static void commit(String msg) {
+        if (msg.equals("")  ) {
+            exit("Please enter a commit message.");
+        }
+        // TODO: get the current commit
+        // TODO: get the stage
+        // gettheHeadCommit
+        Commit head = getHead();
+        commitWith(msg, list.of(head));
+    }
+
+    public static void rm(String fileName) {
+        File = join(CWD, fileName);
+        Commit head = getHead();
+        Stage stage = readStage();
+
+        String headBlobId = head.getBlobs().getOrDefault(fileName, "");
+        String stageBlobId = stage.getAdded().getOrDefault(fileName, "");
+
+        if (headBlobId.equals("") && stageBlobId.equals("")) {
+            exit("No reason to remove the file.");
+        }
+
+        // TODO: Unstage the file if it is currently staged for addition.
     }
 
 
@@ -218,5 +249,50 @@ public class Repository {
 
     private static void writeBlobToStaging(String blobId, Blob blob) {
         writeObject(join(STAGING_DIR, blobId), blob);
+    }
+
+    private static void commtWith(String msg, List<Commit> parents) {
+        Stage stage = readStage();
+        // If no files have been staged, abort
+        if (stage.isEmpty()) {
+            exit("No changes added to the commit.");
+        }
+
+        Commit commit = new Commit(msg, parents, stage);
+        // The staging area is cleared after a commit.
+        clearStage(stage);
+        writeCommitToFile(commit);
+
+        updateBranch(commit);
+    }
+
+    /**
+     * mv staging's blob to object.
+     * @param stage
+     */
+    private static void clearStage(Stage stage) {
+        File[] files = STAGING_DIR.listFiles();
+        if (files == null) {
+            return;
+        }
+        Path targetDir = OBJECTS_DIR.toPath();
+        for (File file: files) {
+            Path source = file.toPath();
+            try {
+                Files.move(source, targetDir.resolve(source.getFileName()), REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // will cover stage.
+        writeStage(new Stage());
+    }
+
+    private void updateBranch(Commit commit) {
+        String commitId = commit.getId();
+        String branchName = getHeadBranchName();
+        File branch = getBranchFile(branchName);
+        writeContents(branch, commit);
     }
 }
