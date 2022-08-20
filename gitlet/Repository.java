@@ -212,6 +212,17 @@ public class Repository {
         writeStage(stage);
     }
 
+    public static void log() {
+        StringBuffer sb = new StringBuffer();
+        Commit commit = getHead();
+        while (commit != null) {
+            sb.append(commit.getCommitAsString());
+            commit = getCommitFromId(commit.getFirstParentId());
+        }
+
+        System.out.print(sb);
+    }
+
 
     /**
      * @param commit Commit Object which will be Serialized.

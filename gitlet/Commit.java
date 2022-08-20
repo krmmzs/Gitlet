@@ -143,4 +143,23 @@ public class Commit implements Serializable{
     private String generateId() {
         return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
     }
+
+    public String getFirstParentId() {
+        if (parents.isEmpty()) {
+            return null;
+        }
+        return parents.get(0);
+    }
+
+    public String getCommitAsString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("===\n");
+        sb.append("commit " + this.id + "\n");
+        if (parents.size() == 2) {
+            sb.append("Merge: " + parents.get(0).substring(0, 7) + " " + parents.get(1).substring(0, 7) + "\n");
+        }
+        sb.append("Date: " + this.getDateString() + "\n");
+        sb.append(this.message + "\n\n");
+        return sb.toString();
+    }
 }

@@ -48,6 +48,12 @@ public class Main {
                 Repository.checkInit();
                 Repository.rm(args[1]);
             }
+            case "log" -> {
+                validateNumArgs(args, 1);
+                Repository.checkInit();
+                Repository.log();
+            }
+
             default -> exit("No command with that name exists.");
         }
     }
