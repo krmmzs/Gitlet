@@ -4,6 +4,18 @@ import static gitlet.Utils.exit;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author krmmzs
+ *
+ * <pre>
+ * 1. Incorporating trees into commits and not dealing with subdirectories (so there will
+ * be one “flat” directory of plain files for each repository).
+ *
+ * 2. Limiting ourselves to merges that reference two parents (in real Git,
+ * there can be any number of parents.)
+ *
+ * 3. Having our metadata consist only of a timestamp and log message. A commit, therefore,
+ * will consist of a log message, timestamp, a mapping of file names to blob references,
+ * a parent reference, and (for merges) a second parent reference.
+ * <pre>
  */
 public class Main {
 
@@ -20,10 +32,21 @@ public class Main {
             case "init" -> {
                 validateNumArgs(args, 1);
                 Repository.init();
-                // TODO: Test init
             }
             case "add" -> {
-                // TODO: handle the `add [filename]` command
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.add(args[1]);
+            }
+            case "commit" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.commit(args[1]);
+            }
+            case "rm" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.rm(args[1]);
             }
             default -> exit("No command with that name exists.");
         }

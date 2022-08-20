@@ -15,7 +15,7 @@ public class Stage implements Serializable {
     /**
      * Staged for addition.
      *
-     * <file path, blob's id>
+     * <file name, blob's id>
      */
     private Map<String, String> added;
 
@@ -23,7 +23,7 @@ public class Stage implements Serializable {
      * <pre>
      * Staged for removal.
      *
-     * <file path>
+     * <file name>
      * <pre>
      */
     private Set<String> removed;
@@ -40,4 +40,13 @@ public class Stage implements Serializable {
 	public Set<String> getRemoved() {
 		return this.removed;
 	}
+
+    public void add(String fileName, String blobId) {
+        added.put(fileName, blobId);
+        removed.remove(fileName);
+    }
+
+    public boolean isEmpty() {
+        return added.isEmpty() && removed.isEmpty();
+    }
 }
