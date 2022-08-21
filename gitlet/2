@@ -301,12 +301,12 @@ public class Repository {
      * @param branchName
      */
     public static void checkoutBranch(String branchName) {
-        File branchFile = getBranchFile(branchName);
+        String branchFile = getBranchFile(branchName);
         // There is no corresponding branch name
         // or no corresponding file.
         // HACK: maybe have redundant judgment.
         if (branchFile == null || !branchFile.exists()) {
-            exit("No such branch exists.");
+            eixt("No such branch exists.");
         }
 
         String headBranchName = getHeadBranchName();
@@ -317,15 +317,12 @@ public class Repository {
 
         // If a working file is untracked in the current
         // branch and would be overwritten by the checkout
-        Commit otherCommit = getCommitFromBranchFile(branchFile);
+        Commit otherCommit = getCommitFromBranchFile(branchName);
         validUntrackedFile(otherCommit.getBlobs());
 
         // see Differences from real git
         clearStage(readStage());
         replaceWorkingPlaceWithCommit(otherCommit);
-
-        // the given branch will now be considered the current branch (HEAD).
-        writeContents(HEAD, branchName);
     }
 
     /**
@@ -490,35 +487,10 @@ public class Repository {
 
     private static void replaceWorkingPlaceWithCommit(Commit commit) {
         clearWoringSpace();
-
-        for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
-            String fileName = entry.getKey();
-            String blobId = entry.getValue();
-            Blob blob = readObject(join(BLOBS_DIR, blobId), Blob.class);
-
-            File file = join(CWD, fileName);
-            writeContents(file, blob.getContent());
-        }
     }
 
     private static void clearWoringSpace() {
         File[] files = CWD.listFiles(gitletFliter);
-        for (File file : files) {
-            delFile(file);
-        }
-    }
-
-    /**
-     * Delete files recursively
-     * @param file
-     */
-    private static void delFile(File file) {
-        if (file.isDirectory()) {
-            for (File f : file.listFiles()) {
-                delFile(f);
-            }
-        }
-        file.delete();
     }
 
     private static FilenameFilter gitletFliter = new FilenameFilter() {

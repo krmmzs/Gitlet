@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,5 +49,12 @@ public class Stage implements Serializable {
 
     public boolean isEmpty() {
         return added.isEmpty() && removed.isEmpty();
+    }
+
+    public ArrayList<String> getStagedFileName() {
+        ArrayList<String> res = new ArrayList<>();
+        res.addAll(added.keySet());
+        res.addAll(removed);
+        return res;
     }
 }

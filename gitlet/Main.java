@@ -68,6 +68,25 @@ public class Main {
                 Repository.checkInit();
                 Repository.status();
             }
+            case "checkout" -> {
+                if (args.length < 2 || args.length > 4) {
+                    exit("Incorrect operands.");
+                }
+                Repository.checkInit();
+                if (args.length == 2) {
+                    // java gitlet.Main checkout [branch name]
+                    Repository.checkoutBranch(args[1]);
+                } else if (args.length == 3) {
+                    // java gitlet.Main checkout -- [file name]
+                    isEqual(args[1], "--");
+                    // Repository.checkoutFileFromHead(args[2]);
+                }
+                else if (args.length == 4) {
+                    // java gitlet.Main checkout [commit id] -- [file name]
+                    isEqual(args[2], "--");
+                    // Repository.checkoutFileFromCommitId(args[3]);
+                }
+            }
             default -> exit("No command with that name exists.");
         }
     }
@@ -84,5 +103,9 @@ public class Main {
         if (args.length != n) {
             exit("Incorrect operands.");
         }
+    }
+
+    public static boolean isEqual(String a, String b) {
+        return a == b;
     }
 }
