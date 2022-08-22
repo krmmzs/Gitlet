@@ -97,6 +97,11 @@ public class Main {
                 Repository.checkInit();
                 Repository.rmBranch(args[1]);
             }
+            case "reset" -> {
+                validateNumArgs(args, n);
+                Repository.checkInit();
+                Repository.reset(args[1]);
+            }
             default -> exit("No command with that name exists.");
         }
     }

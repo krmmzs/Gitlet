@@ -386,6 +386,14 @@ public class Repository {
     }
 
     /**
+     * 
+     * @param commitId
+     */
+    public static void reset(String commitId) {
+
+    }
+
+    /**
      * HEAD -> branchName -> ranchFile -> readContentsAsString
      * @return
      */
