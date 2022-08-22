@@ -97,30 +97,30 @@ ${COMMIT_HEAD}
 initial commit
 
 <<<*
- > checkout master
- <<<
- > log
- ===
- ${COMMIT_HEAD}
- Two files
- 
- ===
- ${COMMIT_HEAD}
- initial commit
- <<<*
- > reset ${MASTER1}
- <<<
- > log
- ===
- ${COMMIT_HEAD}
- Add h.txt and remove g.txt
- 
- ===
- ${COMMIT_HEAD}
- Two files
- 
- ===
- ${COMMIT_HEAD}
- initial commit
- 
- <<<*
+> checkout master
+<<<
+> log
+===
+${COMMIT_HEAD}
+Two files
+
+===
+${COMMIT_HEAD}
+initial commit
+<<<*
+> reset ${MASTER1}
+<<<
+> log
+===
+${COMMIT_HEAD}
+Add h.txt and remove g.txt
+
+===
+${COMMIT_HEAD}
+Two files
+
+===
+${COMMIT_HEAD}
+initial commit
+
+<<<*
