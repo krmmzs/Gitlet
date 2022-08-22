@@ -98,7 +98,7 @@ public class Main {
                 Repository.rmBranch(args[1]);
             }
             case "reset" -> {
-                validateNumArgs(args, n);
+                validateNumArgs(args, 2);
                 Repository.checkInit();
                 Repository.reset(args[1]);
             }
