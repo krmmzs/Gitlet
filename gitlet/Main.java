@@ -79,12 +79,12 @@ public class Main {
                 } else if (args.length == 3) {
                     // java gitlet.Main checkout -- [file name]
                     isEqual(args[1], "--");
-                    // Repository.checkoutFileFromHead(args[2]);
+                    Repository.checkoutFileFromHead(args[2]);
                 }
                 else if (args.length == 4) {
                     // java gitlet.Main checkout [commit id] -- [file name]
                     isEqual(args[2], "--");
-                    // Repository.checkoutFileFromCommitId(args[3]);
+                    Repository.checkoutFileFromCommitId(args[1], args[3]);
                 }
             }
             default -> exit("No command with that name exists.");

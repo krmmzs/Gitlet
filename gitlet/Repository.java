@@ -329,6 +329,75 @@ public class Repository {
     }
 
     /**
+     * HEAD -> commit -> (blobs -> blobId(need check exist) -> blob -> file -> writecontents)
+     * @param branchName
+     */
+    public static void checkoutFileFromHead(String fileName) {
+        Commit head = getHead();
+        checkoutFileFromCommit(fileName, head);
+    }
+
+    /**
+     * commitId -> commit File -> commit -> function:checkoutFileFromCommit
+     * @param commitId
+     * @param fileName
+     */
+    public static void checkoutFileFromCommitId(String commitId, String fileName) {
+        commitId = getCompleteCommitId(commitId);
+        File commitFile = join(COMMIT_DIR, commitId);
+        if (!commitFile.exists()) {
+            exit("No commit with that id exists.");
+        }
+        Commit commit = readObject(commitFile, Commit.class);
+        checkoutFileFromCommit(fileName, commit);
+    }
+
+    private static String getCompleteCommitId(String commitId) {
+        if (commitId.length() == UID_LENGTH) {
+            return commitId;
+        }
+
+        for (String fileName : COMMIT_DIR.list()) {
+            if (fileName.startsWith(commitId)) {
+                return fileName;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * blobs -> (blobId(need check exist) -> blob -> file -> writecontents)
+     * @param commit
+     * @param fileName
+     */
+    private static void checkoutFileFromCommit(String fileName, Commit commit) {
+        String  blobId = commit.getBlobs().getOrDefault(fileName, "");
+        checkoutFileFromBlobId(blobId);
+    }
+
+    /**
+     * blobId(need check exist) -> (blob -> file -> writecontents)
+     * @param blobId
+     */
+    private static void checkoutFileFromBlobId(String blobId) {
+        if (blobId.equals("")) {
+            exit("File does not exist in that commit.");
+        }
+        Blob blob = getBlobFromId(blobId);
+        checkoutFileFromBlob(blob);
+    }
+
+    private static void checkoutFileFromBlob(Blob blob) {
+        File file = join(CWD, blob.getFileName());
+        writeContents(file, blob.getContent());
+    }
+
+    private static Blob getBlobFromId(String blobId) {
+        File file = join(BLOBS_DIR, blobId);
+        return readObject(file, Blob.class);
+    }
+
+    /**
      * @param commit Commit Object which will be Serialized.
      */
     private static void writeCommitToFile(Commit commit) {
