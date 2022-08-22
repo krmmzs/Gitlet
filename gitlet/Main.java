@@ -87,6 +87,16 @@ public class Main {
                     Repository.checkoutFileFromCommitId(args[1], args[3]);
                 }
             }
+            case "branch" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.branch(args[1]);
+            }
+            case "rm-branch" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.rmBranch(args[1]);
+            }
             default -> exit("No command with that name exists.");
         }
     }
@@ -105,7 +115,9 @@ public class Main {
         }
     }
 
-    public static boolean isEqual(String a, String b) {
-        return a == b;
+    public static void isEqual(String a, String b) {
+        if (!a.equals(b)) {
+            exit("Incorrect operands.");
+        }
     }
 }

@@ -127,7 +127,7 @@ public class Repository {
     public static void add(String fileName) {
         File file = join(CWD, fileName); // get file from CWD
         if (!file.exists()) {
-            exit("Not in an initialized Gitlet directory.");
+            exit("File does not exist.");
         }
 
         Blob blob = new Blob(fileName, CWD); // using file name to instance this blob.
@@ -350,6 +350,49 @@ public class Repository {
         }
         Commit commit = readObject(commitFile, Commit.class);
         checkoutFileFromCommit(fileName, commit);
+    }
+
+    /**
+     * branchName -> branch file -> commitId -> writeContents
+     * @param branchName
+     */
+    public static void branch(String  branchName) {
+        File branchFile = join(HEADS_DIR, branchName);
+        if (branchFile.exists()) {
+            exit("A branch with that name already exists.");
+        }
+
+        // points it at the current head commit.
+        String commitId = getHeadCommitId();
+        writeContents(branchFile, commitId);
+    }
+
+    /**
+     * branchName -> branch file -> deleteFile
+     * @param branchName
+     */
+    public static void rmBranch(String branchName) {
+        File branchFile = join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            exit("A branch with that name does not exist.");
+        }
+
+        String headBranchName = getHeadBranchName();
+        if (headBranchName.equals(branchName)) {
+            exit("Cannot remove the current branch.");
+        }
+
+        branchFile.delete();
+    }
+
+    /**
+     * HEAD -> branchName -> ranchFile -> readContentsAsString
+     * @return
+     */
+    private static String getHeadCommitId() {
+        String branchName = getHeadBranchName();
+        File branchFile = getBranchFile(branchName);
+        return readContentsAsString(branchFile);
     }
 
     private static String getCompleteCommitId(String commitId) {
