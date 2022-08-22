@@ -386,11 +386,30 @@ public class Repository {
     }
 
     /**
-     * 
+     * <pre>
+     * commitId -> commit file -> commit -> 
+     * Checks out all the files tracked by the given commit
+     *
      * @param commitId
+     * <pre>
      */
     public static void reset(String commitId) {
+        File file = join(COMMIT_DIR, commitId);
+        if (!file.exists()) {
+            exit("No commit with that id exists.");
+        }
 
+        Commit commit = getCommitFromId(commitId);
+
+        // Failure case: If no commit with the given id exists
+        validUntrackedFile(commit.getBlobs());
+
+        replaceWorkingPlaceWithCommit(commit);
+        clearStage(readStage());
+
+        // Also moves the current branch’s head to that commit node.
+        String headBranchName = getHeadBranchName();
+        writeContents(join(HEADS_DIR, headBranchName), commitId);
     }
 
     /**
