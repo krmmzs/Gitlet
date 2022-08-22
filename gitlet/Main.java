@@ -102,6 +102,11 @@ public class Main {
                 Repository.checkInit();
                 Repository.reset(args[1]);
             }
+            case "merge" -> {
+                validateNumArgs(args, 2);
+                Repository.checkInit();
+                Repository.merge(args[1]);
+            }
             default -> exit("No command with that name exists.");
         }
     }

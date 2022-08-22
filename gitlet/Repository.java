@@ -413,6 +413,120 @@ public class Repository {
     }
 
     /**
+     *
+     * @param branchName
+     */
+    public static void merge(String otherBranchName) {
+        // If there are staged additions or removals present,
+        Stage stage = readStage();
+        if (!stage.isEmpty()) {
+            exit("You have uncommitted changes.");
+        }
+
+        // check the headBranchName and otherBranchFile
+        File otherBranchFile = getBranchFile(otherBranchName);
+        if (!otherBranchFile.exists()) {
+            exit("A branch with that name does not exist.");
+        }
+
+        String headBranchName = getHeadBranchName();
+        if (headBranchName.equals(otherBranchName)) {
+            exit("Cannot merge a branch with itself.");
+        }
+
+        // get head commit and other commit
+        Commit head = getHeadBranchName(headBranchName);
+        Commit other = getCommitFromBranchFile(otherBranchFile);
+        // get lca
+        Commit lca = getLca(head, other);
+
+        // If the split point is the same commit as the given branch, then we do nothing(don't exit)
+        if (lca.getId().equals(other.getId())) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return;
+        }
+
+        // If the split point is the current branch, then the effect is to check out the given branch
+        if (lca.getId().equals(head.getId())) {
+            checkoutBranch(otherBranchName);
+            System.out.println("Current branch fast-forwarded.");
+            return;
+        }
+
+        mergeWithLca(lca, head, other);
+    }
+
+    private static void mergeWithLca(Commit lca, Commit head, Commit other) {
+        Set<String> fileNames = getAllFileName(lca, head, other);
+
+        List<String> remove = new LinkedList<>();
+        List<String> rewrite = new LinkedList<>();
+        List<String> conflict = new LinkedList<>();
+
+        for (String fileName : fileNames) {
+            String lcaBlobId = lca.getBlobs().getOrDefault(fileName, "");
+            String headBlobId = head.getBlobs().getOrDefault(fileName, "");
+            String otherBlobId = lca.getBlobs().getOrDefault(fileName, "");
+
+        }
+
+        String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
+        List<Commit> parents = List.of(head, other);
+        commitWith(msg, parents);
+    }
+
+    private static Set<String> getAllFileName(Commit lca, Commit head, Commit other) {
+        Set<String> set = new HashSet<>();
+        set.addAll(lca.getBlobs().keySet());
+        set.addAll(head.getBlobs().keySet());
+        set.addAll(other.getBlobs().keySet());
+
+        return set;
+    }
+
+    /**
+     * @param head
+     * @param other
+     * @return
+     */
+    private static Commit getLca(Commit head, Commit other) {
+        // get the headAncestors using bfs
+        Set<String> headAncestors = bfsFromCommit(head);
+        Queue<Commit> queue = new LinkedList<>();
+
+        queue.add(head);
+        while (!queue.isEmpty()) {
+            Commit commit = queue.poll();
+            if (headAncestors.contains(commit.getId())) {
+                return commit;
+            }
+            if (!commit.getParents().isEmpty()) {
+                for (String id : commit.getParents()) {
+                    queue.add(getCompleteCommitId(id));
+                }
+            }
+        }
+        return new Commit();
+    }
+
+    private static Set<String> bfsFromCommit(Commit head) {
+        Set<String> res = new HashSet<>();
+        Queue<Commit> queue = new LinkedList<>();
+        queue.add(head);
+        while (!queue.isEmpty()) {
+            Commit commit = queue.poll();
+            if (!res.contains(commit.getId()) && !commit.getParents().isEmpty()) {
+                for (String id : commit.getParents()) {
+                    queue.add(getCommitFromId(id));
+                }
+            }
+            res.add(commit.getId());
+        }
+
+        return res;
+    }
+
+    /**
      * HEAD -> branchName -> ranchFile -> readContentsAsString
      * @return
      */
