@@ -504,8 +504,7 @@ public class Repository {
                     // should be checked out and staged.
                     rewrite.add(fileName);
                 }
-            }
-            else {
+            } else {
                 conflict.add(fileName);
             }
         }
@@ -513,7 +512,7 @@ public class Repository {
         // If an untracked file in the current commit would be overwritten or deleted by the merge,
         List<String> untrackedFiles = getUntrackedFiles();
         for (String fileName : untrackedFiles) {
-            if (remove.contains(fileName) || rewrite.contains(fileName)) {
+            if (remove.contains(fileName) || rewrite.contains(fileName) || conflict.contains(fileName)) {
                 exit("There is an untracked file in the way; delete it, or add and commit it first.");
             }
         }
@@ -625,8 +624,8 @@ public class Repository {
         // get the headAncestors using bfs
         Set<String> headAncestors = bfsFromCommit(head);
         Queue<Commit> queue = new LinkedList<>();
+        queue.add(other);
 
-        queue.add(head);
         while (!queue.isEmpty()) {
             Commit commit = queue.poll();
             if (headAncestors.contains(commit.getId())) {
