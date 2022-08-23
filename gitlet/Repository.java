@@ -317,7 +317,7 @@ public class Repository {
 
         // If a working file is untracked in the current
         // branch and would be overwritten by the checkout
-        Commit otherCommit = getCommitFromBranchFile(branchFile);
+        Commit otherCommit = getCommitFromBranchName(branchName);
         validUntrackedFile(otherCommit.getBlobs());
 
         // see Differences from real git
@@ -413,6 +413,15 @@ public class Repository {
     }
 
     /**
+     * <pre>
+     * 1. Modified in other but not HEAD -> other
+     * 2. Modified in HEAD but not other -> HEAD
+     * 3. Modified in other and HEAD 1. in same way -> DNM(same) 2. in diff ways -> conflct
+     * 4. Not in split nor other but in HEAD -> HEAD
+     * 5. Not in split nor HEAD but in other -> other
+     * 6. Unmodified in HEAD but not present in other -> remove
+     * 7. Unmodified in other but not present in HEAD -> remain remove
+     * <pre>
      *
      * @param branchName
      */
@@ -429,13 +438,16 @@ public class Repository {
             exit("A branch with that name does not exist.");
         }
 
+
         String headBranchName = getHeadBranchName();
         if (headBranchName.equals(otherBranchName)) {
             exit("Cannot merge a branch with itself.");
         }
+        
+        // bug free this line
 
         // get head commit and other commit
-        Commit head = getHeadBranchName(headBranchName);
+        Commit head = getCommitFromBranchName(headBranchName);
         Commit other = getCommitFromBranchFile(otherBranchFile);
         // get lca
         Commit lca = getLca(head, other);
@@ -454,8 +466,19 @@ public class Repository {
         }
 
         mergeWithLca(lca, head, other);
+
+        String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
+        List<Commit> parents = List.of(head, other);
+        commitWith(msg, parents);
     }
 
+    /**
+     * Get all the file and judging what needs to be done by the status of these files.
+     *
+     * @param lca
+     * @param head
+     * @param other
+     */
     private static void mergeWithLca(Commit lca, Commit head, Commit other) {
         Set<String> fileNames = getAllFileName(lca, head, other);
 
@@ -464,17 +487,126 @@ public class Repository {
         List<String> conflict = new LinkedList<>();
 
         for (String fileName : fileNames) {
-            String lcaBlobId = lca.getBlobs().getOrDefault(fileName, "");
-            String headBlobId = head.getBlobs().getOrDefault(fileName, "");
-            String otherBlobId = lca.getBlobs().getOrDefault(fileName, "");
+            String lId = lca.getBlobs().getOrDefault(fileName, "");
+            String hId = head.getBlobs().getOrDefault(fileName, "");
+            String oId = other.getBlobs().getOrDefault(fileName, "");
 
+            if (hId.equals(oId) || lId.equals(oId)) {
+                continue;
+            }
+            if (lId.equals(hId)) {
+                if (oId.equals("")) {
+                    remove.add(fileName);
+                }
+                else {
+                    // Any files that were not present at the split
+                    // point and are present only in the given branch
+                    // should be checked out and staged.
+                    rewrite.add(fileName);
+                }
+            }
+            else {
+                conflict.add(fileName);
+            }
         }
 
-        String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
-        List<Commit> parents = List.of(head, other);
-        commitWith(msg, parents);
+        // If an untracked file in the current commit would be overwritten or deleted by the merge,
+        List<String> untrackedFiles = getUntrackedFiles();
+        for (String fileName : untrackedFiles) {
+            if (remove.contains(fileName) || rewrite.contains(fileName)) {
+                exit("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
+
+        if (!remove.isEmpty()) {
+            for (String fileName : remove) {
+                rm(fileName);
+            }
+        }
+
+        // fileName -> blobId -> blob -> blobFile -> write
+        if (!rewrite.isEmpty()) {
+            // Any files that were not present at the split
+            // point and are present only in the given branch
+            // should be checked out and staged.
+            for (String fileName : rewrite) {
+                String oId = other.getBlobs().getOrDefault(fileName, "");
+                Blob blob = getBlobFromId(oId);
+                checkoutFileFromBlob(blob);
+                // add the file.
+                add(fileName);
+            }
+        }
+
+        if (!conflict.isEmpty()) {
+            for (String fileName : conflict) {
+                String hId = head.getBlobs().getOrDefault(fileName, "");
+                String oId = other.getBlobs().getOrDefault(fileName, "");
+
+                String headContent = getContentAsStringFromBlobId(hId);
+                String otherContent = getContentAsStringFromBlobId(oId);
+                String content = getConflictFile(headContent.split("\n"), otherContent.split("\n"));
+                rewriteFile(fileName, content);
+                System.out.println("Encountered a merge conflict.");
+            }
+        }
+
     }
 
+    private static void rewriteFile(String fileName, String content) {
+        File file = join(CWD, fileName);
+        writeContents(file, content);
+    }
+
+    private static String getConflictFile(String[] head, String[] other) {
+        StringBuffer sb = new StringBuffer();
+        int len1 = head.length, len2 = other.length;
+        int i = 0, j = 0;
+        while (i < len1 && j < len2) {
+            if (head[i].equals(other[i])) {
+                sb.append(head[i]);
+            } else {
+                sb.append(getConflictContent(head[i], other[i]));
+            }
+            i += 1;
+            j += 1;
+        }
+
+        while (i < len1) {
+            sb.append(getConflictContent(head[i], ""));
+            i += 1;
+        }
+        while (j < len2) {
+            sb.append(getConflictContent("", other[i]));
+            j += 1;
+        }
+        return sb.toString();
+    }
+
+    private static String getConflictContent(String head, String other) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("<<<<<<< HEAD\n");
+        sb.append(head.equals("") ? head : head + "\n");
+        sb.append("=======\n");
+        sb.append(other.equals("") ? other : other + "\n");
+        sb.append(">>>>>>>\n");
+        return sb.toString();
+    }
+
+    private static String getContentAsStringFromBlobId(String blobId) {
+        if (blobId.equals("")) {
+            return "";
+        }
+        return getBlobFromId(blobId).getContentAsString();
+    }
+
+    /**
+     * get all commits's files.
+     * @param lca
+     * @param head
+     * @param other
+     * @return
+     */
     private static Set<String> getAllFileName(Commit lca, Commit head, Commit other) {
         Set<String> set = new HashSet<>();
         set.addAll(lca.getBlobs().keySet());
@@ -502,7 +634,7 @@ public class Repository {
             }
             if (!commit.getParents().isEmpty()) {
                 for (String id : commit.getParents()) {
-                    queue.add(getCompleteCommitId(id));
+                    queue.add(getCommitFromId(id));
                 }
             }
         }
@@ -706,14 +838,14 @@ public class Repository {
      * If a working file is untracked in the current branch
      * and would be overwritten by the blobs(checkout).
      */
-    private static void validUntrackedFile(HashMap<String, String> blobs) {
+    private static void validUntrackedFile(Map<String, String> blobs) {
         List<String> untrackedFiles = getUntrackedFiles(); // get CWD's untracked files
         if (untrackedFiles.isEmpty()) {
             return;
         }
 
         for (String fileName : untrackedFiles) {
-            String blobId = new  Blob(fileName, CWD).getId();
+            String blobId = new Blob(fileName, CWD).getId();
             String otherId = blobs.getOrDefault(fileName, "");
             if (!otherId.equals(blobId)) {
                 exit("There is an untracked file in the way; delete it, or add and commit it first.");
