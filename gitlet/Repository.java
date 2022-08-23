@@ -229,7 +229,7 @@ public class Repository {
         StringBuffer sb = new StringBuffer();
         List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
         for (String fileName : fileNames) {
-            Commit commit = getCommitFromId(fileName);
+            Commit commit = getCommitFromId(fileName); // These files's name represent the id
             sb.append(commit.getCommitAsString());
         }
         System.out.println(sb);
