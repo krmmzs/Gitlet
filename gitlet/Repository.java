@@ -26,10 +26,6 @@ public class Repository {
      */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
-    /**
-     * The staging directory, restores staging Blobs.
-     */
-    public static final File STAGING_DIR = join(GITLET_DIR, "staging");
 
     /** 
      * The stage Object.(replace index)
@@ -40,6 +36,11 @@ public class Repository {
      * The Objects directory, stores commits and blobs.
      */
     public static final File OBJECTS_DIR = join(GITLET_DIR, "Objects");
+
+    /**
+     * The staging directory, restores staging Blobs.
+     */
+    public static final File STAGING_DIR = join(OBJECTS_DIR, "staging");
 
     /**
      * The Objects directory, stores committed blobs.
@@ -89,7 +90,6 @@ public class Repository {
 
         // create Master
         // create HEAD
-        // HACK:maybe could write a Class:Branch
         String id = initialCommit.getId();
         // String branchName = "master";
         File default_branch = join(HEADS_DIR, DEFAULT_BRANCH);
@@ -98,10 +98,11 @@ public class Repository {
     }
 
     private static void createInitDir() {
+        // Need to pay attention to the order
         GITLET_DIR.mkdir();
-        STAGING_DIR.mkdir();
-        writeObject(STAGE, new Stage());
         OBJECTS_DIR.mkdir();
+        writeObject(STAGE, new Stage());
+        STAGING_DIR.mkdir();
         BLOBS_DIR.mkdir();
         COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
@@ -141,7 +142,6 @@ public class Repository {
         String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
         String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
 
-        // HACK: maybe have more edge case.
         // the current working version of the file is identical to 
         // the version in the current commit do not stage it be added.
         // and remove it from the staging area if it is already there
@@ -171,8 +171,8 @@ public class Repository {
         if (msg.equals("")  ) {
             exit("Please enter a commit message.");
         }
-        // TODO: get the current commit
-        // TODO: get the stage
+        // get the current commit
+        // get the stage
         // gettheHeadCommit
         Commit head = getHead();
         commitWith(msg, List.of(head));
@@ -202,11 +202,10 @@ public class Repository {
         Blob blob = new Blob(fileName, CWD);
         String blobId = blob.getId();
         // If the file is tracked in the current
-        // commit, stage it for removal(done in last condition)
+        // commit, stage it for removal(done in last condition, untracked means )
         // and remove the file from the working directory
         // if the user has not already done so
-        // HACK: blob.exists maybe could without judgement
-        if (blobId.equals(headBlobId) && blob.exists()) {
+        if (blobId.equals(headBlobId)) {
             // remove the file from the working directory
             restrictedDelete(file);
         }
@@ -304,8 +303,7 @@ public class Repository {
         File branchFile = getBranchFile(branchName);
         // There is no corresponding branch name
         // or no corresponding file.
-        // HACK: maybe have redundant judgment.
-        if (branchFile == null || !branchFile.exists()) {
+        if (!branchFile.exists()) {
             exit("No such branch exists.");
         }
 
@@ -721,7 +719,7 @@ public class Repository {
     }
 
     private static Commit getHead() {
-        String branchName = getHeadBranchName(); // maybe master
+        String branchName = getHeadBranchName();
         File branchFile = getBranchFile(branchName);
         Commit head = getCommitFromBranchFile(branchFile);
 

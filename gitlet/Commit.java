@@ -28,6 +28,7 @@ import java.util.Map;
  *  @author krmmzs
  */
 public class Commit implements Serializable{
+    //TODO: more lazy loading.
 
     /**
      * The message of this Commit.
@@ -93,7 +94,6 @@ public class Commit implements Serializable{
             blobs.remove(fileName);
         }
         // this.blobs = blobs;
-        //HACK: There may be order issues
         this.id = generateId();
         this.saveFile = generateSaveFile();
     }
