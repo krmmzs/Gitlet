@@ -12,6 +12,7 @@ import java.util.Set;
  * Stage
  */
 public class Stage implements Serializable {
+    //TODO: more lazy loading.
 
     /**
      * Staged for addition.

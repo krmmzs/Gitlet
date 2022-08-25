@@ -10,6 +10,7 @@ import static gitlet.Utils.*;
  * Blob
  */
 public class Blob implements Serializable {
+    //TODO: more lazy loading.
     /**
      * The reference to the Blob.
      */
@@ -73,5 +74,4 @@ public class Blob implements Serializable {
     private File generateSaveFile() {
         return join(Repository.BLOBS_DIR, id);
     }
-
 }
