@@ -148,7 +148,8 @@ public class Commit implements Serializable{
 
     public String getFirstParentId() {
         if (parents.isEmpty()) {
-            return "null";
+            // original return "null"
+            return "";
         }
         return parents.get(0);
     }

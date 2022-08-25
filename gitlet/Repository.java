@@ -142,21 +142,7 @@ public class Repository {
         String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
         String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
 
-        // Staging an already-staged file overwrites the previous entry
-        // in the staging area with the new contents.
-        if (!blobId.equals(stageBlobId)) {
-            // check no file
-            if (!stageBlobId.equals("")) {
-                join(STAGING_DIR, stageBlobId).delete();
-            }
-            writeBlobToStaging(blobId, blob);
-
-            stage.add(fileName, blobId);
-            writeStage(stage);
-            return;
-        }
-
-        // the current working version of the file is identical to
+        // the current working version of the file is identical to 
         // the version in the current commit do not stage it be added.
         // and remove it from the staging area if it is already there
         if (blobId.equals(headBlobId)) {
@@ -166,9 +152,18 @@ public class Repository {
             stage.getAdded().remove(fileName);
             stage.getRemoved().remove(fileName);
             writeStage(stage);
-            return;
-        }
+        } else if (!blobId.equals(stageBlobId)) {
+            // update new version
 
+            // check no file
+            if (!stageBlobId.equals("")) {
+                join(STAGING_DIR, stageBlobId).delete();
+            }
+            writeBlobToStaging(blobId, blob);
+
+            stage.add(fileName, blobId);
+            writeStage(stage);
+        }
     }
 
     public static void commit(String msg) {
@@ -232,7 +227,7 @@ public class Repository {
         StringBuffer sb = new StringBuffer();
         List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
         for (String fileName : fileNames) {
-            Commit commit = getCommitFromId(fileName);
+            Commit commit = getCommitFromId(fileName); // at this time, file name == commit id.
             sb.append(commit.getCommitAsString());
         }
         System.out.println(sb);
@@ -772,7 +767,8 @@ public class Repository {
 
     private static Commit getCommitFromId(String commitId) {
         File file = join(COMMIT_DIR, commitId);
-        if (commitId.equals("null") || !file.exists()) {
+        // original: commitId.equals("null") ...
+        if (commitId.equals("") || !file.exists()) {
             return null;
         }
         return readObject(file, Commit.class);
@@ -788,7 +784,7 @@ public class Repository {
 
     /**
      * @param blobId for file Name
-     * @param blob for file contents
+     * @param blob for file Contents
      */
     private static void writeBlobToStaging(String blobId, Blob blob) {
         writeObject(join(STAGING_DIR, blobId), blob);
