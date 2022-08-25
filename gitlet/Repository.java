@@ -142,29 +142,33 @@ public class Repository {
         String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
         String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
 
-        // the current working version of the file is identical to 
-        // the version in the current commit do not stage it be added.
-        // and remove it from the staging area if it is already there
-        if (blobId.equals(headBlobId)) {
-            if (!blob.equals(stageBlobId)) {
-                // delete the file from staging
-                join(STAGING_DIR, stageBlobId).delete();
-                stage.getAdded().remove(fileName);
-                stage.getRemoved().remove(fileName);
-                writeStage(stage);
-            }
-        } else if (!blob.equals(stageBlobId)) {
-            // update new version
-
+        // Staging an already-staged file overwrites the previous entry
+        // in the staging area with the new contents.
+        if (!blobId.equals(stageBlobId)) {
             // check no file
             if (!stageBlobId.equals("")) {
                 join(STAGING_DIR, stageBlobId).delete();
             }
-
             writeBlobToStaging(blobId, blob);
+
             stage.add(fileName, blobId);
             writeStage(stage);
+            return;
         }
+
+        // the current working version of the file is identical to
+        // the version in the current commit do not stage it be added.
+        // and remove it from the staging area if it is already there
+        if (blobId.equals(headBlobId)) {
+            // delete the file from staging
+            join(STAGING_DIR, stageBlobId).delete();
+
+            stage.getAdded().remove(fileName);
+            stage.getRemoved().remove(fileName);
+            writeStage(stage);
+            return;
+        }
+
     }
 
     public static void commit(String msg) {
@@ -782,6 +786,10 @@ public class Repository {
         writeObject(STAGE, stage);
     }
 
+    /**
+     * @param blobId for file Name
+     * @param blob for file contents
+     */
     private static void writeBlobToStaging(String blobId, Blob blob) {
         writeObject(join(STAGING_DIR, blobId), blob);
     }
