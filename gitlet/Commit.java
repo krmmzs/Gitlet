@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Date; // Represents Time.
 import java.util.HashMap;
-import java.util.TreeMap;
+// import java.util.TreeMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.Map;
  *
  *  @author krmmzs
  */
-public class Commit implements Serializable{
+public class Commit implements Serializable {
     //TODO: more lazy loading.
 
     /**
@@ -102,25 +102,25 @@ public class Commit implements Serializable{
         return this.blobs;
     }
 
-	public String getMessage() {
-		return this.message;
-	}
+    public String getMessage() {
+        return this.message;
+    }
 
-	public Date getTimestamp() {
-		return this.timestamp;
-	}
+    public Date getTimestamp() {
+        return this.timestamp;
+    }
 
-	public String getId() {
-		return this.id;
-	}
+    public String getId() {
+        return this.id;
+    }
 
-	public List<String> getParents() {
-		return this.parents;
-	}
+    public List<String> getParents() {
+        return this.parents;
+    }
 
-	public File getSaveFile() {
-		return saveFile;
-	}
+    public File getSaveFile() {
+        return saveFile;
+    }
 
     public String getDateString() {
         DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
@@ -159,7 +159,8 @@ public class Commit implements Serializable{
         sb.append("===\n");
         sb.append("commit " + this.id + "\n");
         if (parents.size() == 2) {
-            sb.append("Merge: " + parents.get(0).substring(0, 7) + " " + parents.get(1).substring(0, 7) + "\n");
+            sb.append("Merge: " + parents.get(0).substring(0, 7)
+                + " " + parents.get(1).substring(0, 7) + "\n");
         }
         sb.append("Date: " + this.getDateString() + "\n");
         sb.append(this.message + "\n\n");

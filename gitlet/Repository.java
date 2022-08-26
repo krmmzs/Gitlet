@@ -69,12 +69,12 @@ public class Repository {
     /**
      * stores current branch's name if it points to tip
      */
-    public static File HEAD = join(GITLET_DIR, "HEAD");;
+    private static File HEAD = join(GITLET_DIR, "HEAD");
     // Note that in Gitlet, there is no way to be in a detached head state
 
-    public static File CONFIG;
+    private static File CONFIG;
 
-    public static String DEFAULT_BRANCH = "master";
+    private static String DEFAULT_BRANCH = "master";
 
     public static void init() {
         if (GITLET_DIR.exists() && GITLET_DIR.isDirectory()) {
@@ -92,8 +92,8 @@ public class Repository {
         // create HEAD
         String id = initialCommit.getId();
         // String branchName = "master";
-        File default_branch = join(HEADS_DIR, DEFAULT_BRANCH);
-        writeContents(default_branch, id); // .gitlet/refs/heads/master
+        File defaultBranch = join(HEADS_DIR, DEFAULT_BRANCH);
+        writeContents(defaultBranch, id); // .gitlet/refs/heads/master
         writeContents(HEAD, DEFAULT_BRANCH); // .gitlet/HEAD
     }
 
@@ -138,9 +138,10 @@ public class Repository {
         Commit head = getHead();
         // get the Stage
         Stage stage = readStage();
-
-        String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
-        String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
+        // using file name to find file in current Commit.
+        String headBlobId = head.getBlobs().getOrDefault(fileName, "");
+        // usign file name to find file in stage.
+        String stageBlobId = stage.getAdded().getOrDefault(fileName, "");
 
         // the current working version of the file is identical to 
         // the version in the current commit do not stage it be added.
@@ -167,7 +168,7 @@ public class Repository {
     }
 
     public static void commit(String msg) {
-        if (msg.equals("")  ) {
+        if (msg.equals("")) {
             exit("Please enter a commit message.");
         }
         // get the current commit
@@ -223,7 +224,7 @@ public class Repository {
         System.out.print(sb);
     }
 
-    public static void global_log() {
+    public static void globalLog() {
         StringBuffer sb = new StringBuffer();
         List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
         for (String fileName : fileNames) {
@@ -464,7 +465,8 @@ public class Repository {
             return;
         }
 
-        // If the split point is the current branch, then the effect is to check out the given branch
+        // If the split point is the current branch,
+        // then the effect is to check out the given branch
         if (lca.getId().equals(head.getId())) {
             checkoutBranch(otherBranchName);
             System.out.println("Current branch fast-forwarded.");
@@ -573,8 +575,7 @@ public class Repository {
             if (lId.equals(hId)) {
                 if (oId.equals("")) {
                     remove.add(fileName);
-                }
-                else {
+                } else {
                     // Any files that were not present at the split
                     // point and are present only in the given branch
                     // should be checked out and staged.
@@ -585,11 +586,14 @@ public class Repository {
             }
         }
 
-        // If an untracked file in the current commit would be overwritten or deleted by the merge,
+        // If an untracked file in the current commit would
+        // be overwritten or deleted by the merge,
         List<String> untrackedFiles = getUntrackedFiles();
         for (String fileName : untrackedFiles) {
-            if (remove.contains(fileName) || rewrite.contains(fileName) || conflict.contains(fileName)) {
-                exit("There is an untracked file in the way; delete it, or add and commit it first.");
+            if (remove.contains(fileName) || rewrite.contains(fileName)
+                || conflict.contains(fileName)) {
+                exit("There is an untracked file in the way;"
+                    + " delete it, or add and commit it first.");
             }
         }
 
@@ -930,7 +934,8 @@ public class Repository {
             String blobId = new Blob(fileName, CWD).getId();
             String otherId = blobs.getOrDefault(fileName, "");
             if (!otherId.equals(blobId)) {
-                exit("There is an untracked file in the way; delete it, or add and commit it first.");
+                exit("There is an untracked file in the way; delete it,"
+                    + " or add and commit it first.");
             }
         }
     }

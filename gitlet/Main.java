@@ -56,7 +56,7 @@ public class Main {
             case "global-log" -> {
                 validateNumArgs(args, 1);
                 Repository.checkInit();
-                Repository.global_log();
+                Repository.globalLog();
             }
             case "find" -> {
                 validateNumArgs(args, 2);
