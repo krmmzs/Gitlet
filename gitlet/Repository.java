@@ -278,6 +278,10 @@ public class Repository {
 
         // TODO: status ec
         sb.append("=== Modifications Not Staged For Commit ===\n");
+        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage);
+        for (String str : modifiedFiles) {
+            sb.append(str + "\n");
+        }
         sb.append("\n");
         sb.append("=== Untracked Files ===\n");
         List<String> untrackedFiles = getUntrackedFiles();
@@ -471,6 +475,76 @@ public class Repository {
         String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
         List<Commit> parents = List.of(head, other);
         commitWith(msg, parents);
+    }
+
+    private static List<String> getModifiedFiles(Commit head, Stage stage) {
+        List<String> res = new LinkedList<>();
+
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        for (String fileName : currentFiles) {
+            Blob blob = new Blob(fileName, CWD);
+            // case1: Tracked in the current commit, changed in the working directory, but not
+            // staged; or
+            boolean tracked = head.getBlobs().containsKey(fileName);
+            boolean changed = !blob.getId().equals(head.getBlobs().get(fileName));
+            boolean staged = stage.getAdded().containsKey(fileName);
+            if (tracked && changed && !staged) {
+                res.add(fileName + " (modified)");
+                continue;
+            }
+            // case2: Staged for addition, but with different contents than in the working
+            // directory; or
+            changed = !blob.getId().equals(stage.getAdded().get(fileName));
+            if (staged && changed) {
+                res.add(fileName + " (modified)");
+            }
+        }
+        // case3: Staged for addition, but deleted in the working directory; or
+        for (String fileName : stage.getAdded().keySet()) {
+            if (!currentFiles.contains(fileName)) {
+                res.add(fileName + " (deleted)");
+            }
+        }
+        // case4: Not staged for removal, but tracked in the current commit and deleted from the
+        // working directory.
+        for (String fileName : head.getBlobs().keySet()) {
+            boolean stagedForRemoval = stage.getRemoved().contains(fileName);
+            boolean cwdContains = currentFiles.contains(fileName);
+            if (!stagedForRemoval && !cwdContains) {
+                res.add(fileName + " (deleted)");
+            }
+        }
+        Collections.sort(res);
+        return res;
+
+
+        // Set<String> headFiles = head.getBlobs().keySet();
+        // List<String> stagedFiles = stage.getStagedFilename();
+        //
+        // Set<String> allFiles = new HashSet<>();
+        // allFiles.addAll(currentFiles);
+        // allFiles.addAll(headFiles);
+        // allFiles.addAll(stagedFiles);
+        //
+        // for (String filename : allFiles) {
+        //     if (!currentFiles.contains(filename)) {
+        //         if (stage.getAdded().containsKey(filename) ||
+        //            (headFiles.contains(filename) && !stagedFiles.contains(filename))) {
+        //             res.add(filename + " (deleted)");
+        //         }
+        //     } else {
+        //         String bId = new Blob(filename, CWD).getId();
+        //         String sId = stage.getAdded().getOrDefault(filename, "");
+        //         String hId = head.getBlobs().getOrDefault(filename, "");
+        //         if ((hId != "" && hId != bId && sId == "") ||
+        //             (sId != "" && sId != bId)){
+        //             res.add(filename + " (modified)");
+        //         }
+        //     }
+        // }
+        //
+        // Collections.sort(res);
+        // return res;
     }
 
     /**
