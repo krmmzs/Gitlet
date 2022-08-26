@@ -1,6 +1,12 @@
 import sys, re
-from subprocess import \
-     check_output, PIPE, STDOUT, DEVNULL, CalledProcessError, TimeoutExpired
+from subprocess import (
+    check_output,
+    PIPE,
+    STDOUT,
+    DEVNULL,
+    CalledProcessError,
+    TimeoutExpired,
+)
 from os.path import abspath, basename, dirname, exists, join, splitext
 from getopt import getopt, GetoptError
 from os import chdir, environ, getcwd, mkdir, remove, access, W_OK
@@ -26,7 +32,9 @@ Usage: python3 tester.py OPTIONS TEST.in ...
        --verbose      Print extra information about execution.
 """
 
-USAGE = SHORT_USAGE + """\
+USAGE = (
+    SHORT_USAGE
+    + """\
 
 For each TEST.in, change to an empty directory, and execute the instructions
 in TEST.in.  Before executing an instruction, first replace any occurrence
@@ -85,6 +93,7 @@ TEST.dir).
 
 When finished, reports number of tests passed and failed, and the number of
 faulty TEST.in files."""
+)
 
 TIMEOUT = 10
 
@@ -93,24 +102,29 @@ GITLET_CLASS = "gitlet.Main"
 JVM_OPTIONS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 
 DEBUG = False
-DEBUG_MSG = \
-    """You are in debug mode.
+DEBUG_MSG = """You are in debug mode.
     In this mode, you will be shown each command from the test case.
     If you would like to step into and debug the command, type 's'. Once you have done so, go back to IntelliJ and click the debug button.
     If you would like to move on to the next command, type 'n'."""
+
 
 def Usage():
     print(SHORT_USAGE, file=sys.stderr)
     sys.exit(1)
 
+
 Mat = None
+
+
 def Match(patn, s):
     global Mat
     Mat = re.match(patn, s)
     return Mat
 
+
 def Group(n):
     return Mat.group(n)
+
 
 def contents(filename):
     try:
@@ -119,15 +133,20 @@ def contents(filename):
     except FileNotFoundError:
         return None
 
+
 def editDistance(s1, s2):
-    dist = [list(range(len(s2) + 1))] + \
-           [ [i] + [ 0 ] * len(s2) for i in range(1, len(s1) + 1) ]
+    dist = [list(range(len(s2) + 1))] + [
+        [i] + [0] * len(s2) for i in range(1, len(s1) + 1)
+    ]
     for i in range(1, len(s1) + 1):
         for j in range(1, len(s2) + 1):
-            dist[i][j] = min(dist[i-1][j] + 1,
-                             dist[i][j-1] + 1,
-                             dist[i-1][j-1] + (s1[i-1] != s2[j-1]))
+            dist[i][j] = min(
+                dist[i - 1][j] + 1,
+                dist[i][j - 1] + 1,
+                dist[i - 1][j - 1] + (s1[i - 1] != s2[j - 1]),
+            )
     return dist[len(s1)][len(s2)]
+
 
 def createTempDir(base):
     for n in range(100):
@@ -140,8 +159,10 @@ def createTempDir(base):
     else:
         raise ValueError("could not create temp directory for {}".format(base))
 
+
 def cleanTempDir(dir):
     rmtree(dir, ignore_errors=True)
+
 
 def doDelete(name, dir):
     try:
@@ -149,12 +170,14 @@ def doDelete(name, dir):
     except OSError:
         pass
 
+
 def doCopy(dest, src, dir):
     try:
         doDelete(dest, dir)
         copyfile(join(src_dir, src), join(dir, dest))
     except OSError:
         raise ValueError("file {} could not be copied to {}".format(src, dest))
+
 
 def doExecute(cmnd, dir, timeout, line_num):
     here = getcwd()
@@ -168,56 +191,72 @@ def doExecute(cmnd, dir, timeout, line_num):
             print("[line {}]: gitlet {}".format(line_num, cmnd))
             input_prompt = ">>> "
             next_cmd = input(input_prompt)
-            while(next_cmd not in "ns"):
+            while next_cmd not in "ns":
                 print("Please enter either 'n' or 's'.")
                 next_cmd = input(input_prompt)
 
             if next_cmd == "s":
-                full_cmnd = "{} {} {} {}".format(JAVA_COMMAND, JVM_OPTIONS, GITLET_CLASS, cmnd)
+                full_cmnd = "{} {} {} {}".format(
+                    JAVA_COMMAND, JVM_OPTIONS, GITLET_CLASS, cmnd
+                )
                 timeout, skip_first_line = None, True
 
         out = doCommand(full_cmnd, timeout, skip_first_line)
         return "OK", out
     except CalledProcessError as excp:
-        return ("java gitlet.Main exited with code {}".format(excp.args[0]),
-                excp.output)
+        return (
+            "java gitlet.Main exited with code {}".format(excp.args[0]),
+            excp.output,
+        )
     except TimeoutExpired:
         return "timeout", None
     finally:
         chdir(here)
 
+
 def doCommand(full_cmnd, timeout, skip_first_line=False):
-    out = check_output(full_cmnd, shell=True, universal_newlines=True,
-                        stdin=DEVNULL, stderr=STDOUT, timeout=timeout)
+    out = check_output(
+        full_cmnd,
+        shell=True,
+        universal_newlines=True,
+        stdin=DEVNULL,
+        stderr=STDOUT,
+        timeout=timeout,
+    )
     if skip_first_line:
         out = out.split("\n", 1)[1]
 
     return out
 
+
 def canonicalize(s):
     if s is None:
         return None
-    return re.sub('\r', '', s)
+    return re.sub("\r", "", s)
+
 
 def fileExists(f, dir):
     return exists(join(dir, f))
+
 
 def correctFileOutput(name, expected, dir):
     userData = canonicalize(contents(join(dir, name)))
     stdData = canonicalize(contents(join(src_dir, expected)))
     return userData == stdData
 
+
 def correctProgramOutput(expected, actual, last_groups, is_regexp):
-    expected = re.sub(r'[ \t]+\n', '\n', '\n'.join(expected))
-    expected = re.sub(r'(?m)^[ \t]+', ' ', expected)
-    actual = re.sub(r'[ \t]+\n', '\n', actual)
-    actual = re.sub(r'(?m)^[ \t]+', ' ', actual)
+    expected = re.sub(r"[ \t]+\n", "\n", "\n".join(expected))
+    expected = re.sub(r"(?m)^[ \t]+", " ", expected)
+    actual = re.sub(r"[ \t]+\n", "\n", actual)
+    actual = re.sub(r"(?m)^[ \t]+", " ", actual)
 
     last_groups[:] = (actual,)
     if is_regexp:
         try:
-            if not Match(expected.rstrip() + r"\Z", actual) \
-                   and not Match(expected.rstrip() + r"\Z", actual.rstrip()):
+            if not Match(expected.rstrip() + r"\Z", actual) and not Match(
+                expected.rstrip() + r"\Z", actual.rstrip()
+            ):
                 return False
         except:
             raise ValueError("bad pattern")
@@ -225,6 +264,7 @@ def correctProgramOutput(expected, actual, last_groups, is_regexp):
     elif editDistance(expected.rstrip(), actual.rstrip()) > output_tolerance:
         return False
     return True
+
 
 def reportDetails(test, included_files, line_num):
     if show is None:
@@ -239,17 +279,19 @@ def reportDetails(test, included_files, line_num):
     for base in [basename(test)] + included_files:
         full = join(dirname(test), base)
         print(("-" * 20 + " {} " + "-" * 20).format(base))
-        text_lines = list(enumerate(re.split(r'\n\r?', contents(full))))[:-1]
+        text_lines = list(enumerate(re.split(r"\n\r?", contents(full))))[:-1]
         fmt = "{{:{}d}}. {{}}".format(round(log(len(text_lines), 10)))
-        text = '\n'.join(map(lambda p: fmt.format(p[0] + 1, p[1]), text_lines))
+        text = "\n".join(map(lambda p: fmt.format(p[0] + 1, p[1]), text_lines))
         print(text)
         print("-" * (42 + len(base)))
 
+
 def chop_nl(s):
-    if s and s[-1] == '\n':
+    if s and s[-1] == "\n":
         return s[:-1]
     else:
         return s
+
 
 def line_reader(f, prefix):
     n = 0
@@ -257,7 +299,7 @@ def line_reader(f, prefix):
         with open(f) as inp:
             while True:
                 L = inp.readline()
-                if L == '':
+                if L == "":
                     return
                 n += 1
                 included_file = yield (prefix + str(n), L)
@@ -266,6 +308,7 @@ def line_reader(f, prefix):
                     yield from line_reader(included_file, prefix + str(n) + ".")
     except FileNotFoundError:
         raise ValueError("file {} not found".format(f))
+
 
 def doTest(test):
     last_groups = []
@@ -288,17 +331,16 @@ def doTest(test):
         while L0 != L and c < 10:
             c += 1
             L0 = L
-            L = re.sub(r'\$\{(.*?)\}', subst_var, L)
+            L = re.sub(r"\$\{(.*?)\}", subst_var, L)
         return L
 
     def subst_var(M):
         key = M.group(1)
-        if Match(r'\d+$', key):
+        if Match(r"\d+$", key):
             try:
                 return last_groups[int(key)]
             except IndexError:
-                raise ValueError("FAILED (nonexistent group: {{{}}})"
-                                 .format(key))
+                raise ValueError("FAILED (nonexistent group: {{{}}})".format(key))
         elif M.group(1) in defns:
             return defns[M.group(1)]
         else:
@@ -306,78 +348,74 @@ def doTest(test):
 
     try:
         line_num = None
-        inp = line_reader(test, '')
+        inp = line_reader(test, "")
         included_files = []
         while True:
-            line_num, line = next(inp, (line_num, ''))
+            line_num, line = next(inp, (line_num, ""))
             if line == "":
                 print("OK")
                 return True
-            if not Match(r'\s*#', line):
+            if not Match(r"\s*#", line):
                 line = do_substs(line)
             if verbose:
                 print("+ {}".format(line.rstrip()))
-            if Match(r'\s*#', line) or Match(r'\s+$', line):
+            if Match(r"\s*#", line) or Match(r"\s+$", line):
                 pass
-            elif Match(r'I\s+(\S+)', line):
+            elif Match(r"I\s+(\S+)", line):
                 inp.send(join(dirname(test), Group(1)))
                 included_files.append(Group(1))
-            elif Match(r'C\s*(\S*)', line):
+            elif Match(r"C\s*(\S*)", line):
                 if Group(1) == "":
                     cdir = tmpdir
                 else:
                     cdir = join(tmpdir, Group(1))
                     if not exists(cdir):
                         mkdir(cdir)
-            elif Match(r'T\s*(\S+)', line):
+            elif Match(r"T\s*(\S+)", line):
                 try:
                     timeout = float(Group(1))
                 except:
                     ValueError("bad time: {}".format(line))
-            elif Match(r'\+\s*(\S+)\s+(\S+)', line):
+            elif Match(r"\+\s*(\S+)\s+(\S+)", line):
                 doCopy(Group(1), Group(2), cdir)
-            elif Match(r'-\s*(\S+)', line):
+            elif Match(r"-\s*(\S+)", line):
                 doDelete(Group(1), cdir)
-            elif Match(r'>\s*(.*)', line):
+            elif Match(r">\s*(.*)", line):
                 cmnd = Group(1)
                 expected = []
                 while True:
-                    line_num, L = next(inp, (line_num, ''))
-                    if L == '':
-                        raise ValueError("unterminated command: {}"
-                                         .format(line))
+                    line_num, L = next(inp, (line_num, ""))
+                    if L == "":
+                        raise ValueError("unterminated command: {}".format(line))
                     L = L.rstrip()
-                    if Match(r'<<<(\*?)', L):
+                    if Match(r"<<<(\*?)", L):
                         is_regexp = Group(1)
                         break
                     expected.append(do_substs(L))
                 msg, out = doExecute(cmnd, cdir, timeout, line_num)
                 if verbose:
                     if out:
-                        print(re.sub(r'(?m)^', '- ', chop_nl(out)))
+                        print(re.sub(r"(?m)^", "- ", chop_nl(out)))
                 if msg == "OK":
-                    if not correctProgramOutput(expected, out, last_groups,
-                                                is_regexp):
+                    if not correctProgramOutput(expected, out, last_groups, is_regexp):
                         msg = "incorrect output"
                 if msg != "OK":
                     print("ERROR ({})".format(msg))
                     reportDetails(test, included_files, line_num)
                     return False
-            elif Match(r'=\s*(\S+)\s+(\S+)', line):
+            elif Match(r"=\s*(\S+)\s+(\S+)", line):
                 if not correctFileOutput(Group(1), Group(2), cdir):
-                    print("ERROR (file {} has incorrect content)"
-                          .format(Group(1)))
+                    print("ERROR (file {} has incorrect content)".format(Group(1)))
                     reportDetails(test, included_files, line_num)
                     return False
-            elif Match(r'\*\s*(\S+)', line):
+            elif Match(r"\*\s*(\S+)", line):
                 if fileExists(Group(1), cdir):
                     print("ERROR (file {} present)".format(Group(1)))
                     reportDetails(test, included_files, line_num)
                     return False
-            elif Match(r'E\s*(\S+)', line):
+            elif Match(r"E\s*(\S+)", line):
                 if not fileExists(Group(1), cdir):
-                    print("ERROR (file or directory {} not present)"
-                          .format(Group(1)))
+                    print("ERROR (file or directory {} not present)".format(Group(1)))
                     reportDetails(test, included_files, line_num)
                     return False
             elif Match(r'(?s)D\s*([a-zA-Z_][a-zA-Z_0-9]*)\s*"(.*)"\s*$', line):
@@ -388,25 +426,27 @@ def doTest(test):
         if not keep:
             cleanTempDir(tmpdir)
 
+
 if __name__ == "__main__":
     show = None
     keep = False
     prog_dir = None
     verbose = False
-    src_dir = 'src'
+    src_dir = "src"
     output_tolerance = 3
 
     try:
-        opts, files = \
-            getopt(sys.argv[1:], '',
-                   ['show=', 'keep', 'progdir=', 'verbose', 'src=',
-                    'tolerance=', 'debug'])
+        opts, files = getopt(
+            sys.argv[1:],
+            "",
+            ["show=", "keep", "progdir=", "verbose", "src=", "tolerance=", "debug"],
+        )
         for opt, val in opts:
-            if opt == '--show':
+            if opt == "--show":
                 val = val.lower()
-                if re.match(r'-?\d+', val):
+                if re.match(r"-?\d+", val):
                     show = int(val)
-                elif val == 'all':
+                elif val == "all":
                     show = val
                 else:
                     Usage()
@@ -427,7 +467,7 @@ if __name__ == "__main__":
             k = 10
             while k > 0 and access(prog_dir, W_OK):
                 k -= 1
-                if exists(join(prog_dir, 'gitlet', 'Main.class')):
+                if exists(join(prog_dir, "gitlet", "Main.class")):
                     break
                 prog_dir = dirname(prog_dir)
             else:
@@ -439,18 +479,18 @@ if __name__ == "__main__":
         print(USAGE)
         sys.exit(0)
 
-    ON_WINDOWS = Match(r'.*\\', join('a', 'b'))
+    ON_WINDOWS = Match(r".*\\", join("a", "b"))
     if ON_WINDOWS:
-        if 'CLASSPATH' in environ:
-            environ['CLASSPATH'] = "{};{}".format(prog_dir, environ['CLASSPATH'])
+        if "CLASSPATH" in environ:
+            environ["CLASSPATH"] = "{};{}".format(prog_dir, environ["CLASSPATH"])
         else:
-            environ['CLASSPATH'] = "{}".format(prog_dir)
+            environ["CLASSPATH"] = "{}".format(prog_dir)
     else:
-        if 'CLASSPATH' in environ:
-            environ['CLASSPATH'] = "{}:{}".format(prog_dir, environ['CLASSPATH'])
+        if "CLASSPATH" in environ:
+            environ["CLASSPATH"] = "{}:{}".format(prog_dir, environ["CLASSPATH"])
         else:
-            environ['CLASSPATH'] = "{}".format(prog_dir)
-        JAVA_COMMAND = 'exec ' + JAVA_COMMAND
+            environ["CLASSPATH"] = "{}".format(prog_dir)
+        JAVA_COMMAND = "exec " + JAVA_COMMAND
 
     num_tests = len(files)
     errs = 0
