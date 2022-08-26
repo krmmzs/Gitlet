@@ -452,7 +452,8 @@ public class Repository {
         // bug free this line
 
         // get head commit and other commit
-        Commit head = getCommitFromBranchName(headBranchName);
+        // Commit head = getCommitFromBranchName(headBranchName);
+        Commit head = getHead();
         Commit other = getCommitFromBranchFile(otherBranchFile);
         // get lca
         Commit lca = getLca(head, other);
@@ -620,7 +621,9 @@ public class Repository {
                 String headContent = getContentAsStringFromBlobId(hId);
                 String otherContent = getContentAsStringFromBlobId(oId);
                 String content = getConflictFile(headContent.split("\n"), otherContent.split("\n"));
+                // rewrite file and and stage the result.
                 rewriteFile(fileName, content);
+                add(fileName);
                 System.out.println("Encountered a merge conflict.");
             }
         }
@@ -940,11 +943,15 @@ public class Repository {
      * @return Untracked Files's Name
      */
     private static List<String> getUntrackedFiles() {
+        Commit head = getHead();
+        Stage stage = readStage();
         List<String> res = new ArrayList<>();
-        List<String> stageFiles = readStage().getStagedFileName();
-        Set<String> headFiles = getHead().getBlobs().keySet();
-        for (String fileName : plainFilenamesIn(CWD)) {
-            if (!stageFiles.contains(fileName) && !headFiles.contains(fileName)) {
+        List<String> cwdFileNames = plainFilenamesIn(CWD);
+        for (String fileName : cwdFileNames) {
+            boolean tracked = head.getBlobs().containsKey(fileName);
+            boolean staged = stage.getAdded().containsKey(fileName);
+            // untracked files
+            if (!staged && !tracked) {
                 res.add(fileName);
             }
         }
