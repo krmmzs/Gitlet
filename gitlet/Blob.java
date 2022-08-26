@@ -9,8 +9,8 @@ import static gitlet.Utils.*;
 /**
  * Blob
  */
+// TODO: more lazy loading.
 public class Blob implements Serializable {
-    //TODO: more lazy loading.
     /**
      * The reference to the Blob.
      */
@@ -30,11 +30,11 @@ public class Blob implements Serializable {
     /**
      * construct Blob with file name and where.
      * @param fileName
-     * @param CWD
+     * @param cwd
      */
-    public Blob(String fileName, File CWD) {
+    public Blob(String fileName, File cwd) {
         this.fileName = fileName;
-        File file = join(CWD, fileName);
+        File file = join(cwd, fileName);
         if (file.exists()) {
             this.content = readContents(file);
             this.id = generateId();
@@ -44,21 +44,21 @@ public class Blob implements Serializable {
         }
     }
 
-	public String getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public byte[] getContent() {
-		return content;
-	}
+    public byte[] getContent() {
+        return content;
+    }
 
-	private String generateId() {
+    private String generateId() {
         return sha1(fileName, content);
     }
 
-	public String getFileName() {
-		return fileName;
-	}
+    public String getFileName() {
+        return fileName;
+    }
 
     public boolean exists() {
         return this.content != null;
