@@ -71,7 +71,7 @@ public class Blob implements Serializable {
     /**
      * @return save filename:id File.(like git)
      */
-    private File generateSaveFile() {
-        return join(Repository.BLOBS_DIR, id);
-    }
+    // private File generateSaveFile() {
+    //     return join(Repository.BLOBS_DIR, id);
+    // }
 }

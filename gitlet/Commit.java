@@ -54,7 +54,7 @@ public class Commit implements Serializable {
     /**
      * The cache of saveFile.
      */
-    private final File saveFile;
+    // private final File saveFile;
 
     /**
      * <pre>
@@ -72,7 +72,7 @@ public class Commit implements Serializable {
         this.parents = new LinkedList<>();
         this.blobs = new HashMap<>();
         this.id = sha1(message, timestamp.toString()); // init's id(sha1) is special.
-        this.saveFile = generateSaveFile();
+        // this.saveFile = generateSaveFile();
     }
 
     public Commit(String message, List<Commit> parents, Stage stage) {
@@ -95,7 +95,7 @@ public class Commit implements Serializable {
         }
         // this.blobs = blobs;
         this.id = generateId();
-        this.saveFile = generateSaveFile();
+        // this.saveFile = generateSaveFile();
     }
 
     public HashMap<String, String> getBlobs() {
@@ -118,9 +118,9 @@ public class Commit implements Serializable {
         return this.parents;
     }
 
-    public File getSaveFile() {
-        return saveFile;
-    }
+    // public File getSaveFile() {
+    //     return saveFile;
+    // }
 
     public String getDateString() {
         DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
@@ -132,9 +132,9 @@ public class Commit implements Serializable {
      *
      * @return SaveFile by id.
      */
-    private File generateSaveFile() {
-        return join(Repository.COMMIT_DIR, id); // now, without Tries firstly...
-    }
+    // private File generateSaveFile() {
+    //     return join(COMMIT_DIR, id); // now, without Tries firstly...
+    // }
 
 
     /**
