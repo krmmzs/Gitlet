@@ -280,6 +280,10 @@ public class Repository {
         sb.append("=== Modifications Not Staged For Commit ===\n");
         sb.append("\n");
         sb.append("=== Untracked Files ===\n");
+        List<String> untrackedFiles = getUntrackedFiles();
+        for (String filename : untrackedFiles) {
+            sb.append(filename + "\n");
+        }
         sb.append("\n");
 
         System.out.println(sb);
