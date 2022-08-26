@@ -142,21 +142,7 @@ public class Repository {
         String headBlobId = head.getBlobs().getOrDefault(fileName, ""); // using file name to find file in current Commit.
         String stageBlobId = stage.getAdded().getOrDefault(fileName, ""); // usign file name to find file in stage.
 
-        // Staging an already-staged file overwrites the previous entry
-        // in the staging area with the new contents.
-        if (!blobId.equals(stageBlobId)) {
-            // check no file
-            if (!stageBlobId.equals("")) {
-                join(STAGING_DIR, stageBlobId).delete();
-            }
-            writeBlobToStaging(blobId, blob);
-
-            stage.add(fileName, blobId);
-            writeStage(stage);
-            return;
-        }
-
-        // the current working version of the file is identical to
+        // the current working version of the file is identical to 
         // the version in the current commit do not stage it be added.
         // and remove it from the staging area if it is already there
         if (blobId.equals(headBlobId)) {
@@ -166,9 +152,18 @@ public class Repository {
             stage.getAdded().remove(fileName);
             stage.getRemoved().remove(fileName);
             writeStage(stage);
-            return;
-        }
+        } else if (!blobId.equals(stageBlobId)) {
+            // update new version
 
+            // check no file
+            if (!stageBlobId.equals("")) {
+                join(STAGING_DIR, stageBlobId).delete();
+            }
+            writeBlobToStaging(blobId, blob);
+
+            stage.add(fileName, blobId);
+            writeStage(stage);
+        }
     }
 
     public static void commit(String msg) {
@@ -232,7 +227,7 @@ public class Repository {
         StringBuffer sb = new StringBuffer();
         List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
         for (String fileName : fileNames) {
-            Commit commit = getCommitFromId(fileName); // These files's name represent the id
+            Commit commit = getCommitFromId(fileName); // at this time, file name == commit id.
             sb.append(commit.getCommitAsString());
         }
         System.out.println(sb);
@@ -283,8 +278,16 @@ public class Repository {
 
         // TODO: status ec
         sb.append("=== Modifications Not Staged For Commit ===\n");
+        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage);
+        for (String str : modifiedFiles) {
+            sb.append(str + "\n");
+        }
         sb.append("\n");
         sb.append("=== Untracked Files ===\n");
+        List<String> untrackedFiles = getUntrackedFiles();
+        for (String filename : untrackedFiles) {
+            sb.append(filename + "\n");
+        }
         sb.append("\n");
 
         System.out.println(sb);
@@ -472,6 +475,76 @@ public class Repository {
         String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
         List<Commit> parents = List.of(head, other);
         commitWith(msg, parents);
+    }
+
+    private static List<String> getModifiedFiles(Commit head, Stage stage) {
+        List<String> res = new LinkedList<>();
+
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        for (String fileName : currentFiles) {
+            Blob blob = new Blob(fileName, CWD);
+            // case1: Tracked in the current commit, changed in the working directory, but not
+            // staged; or
+            boolean tracked = head.getBlobs().containsKey(fileName);
+            boolean changed = !blob.getId().equals(head.getBlobs().get(fileName));
+            boolean staged = stage.getAdded().containsKey(fileName);
+            if (tracked && changed && !staged) {
+                res.add(fileName + " (modified)");
+                continue;
+            }
+            // case2: Staged for addition, but with different contents than in the working
+            // directory; or
+            changed = !blob.getId().equals(stage.getAdded().get(fileName));
+            if (staged && changed) {
+                res.add(fileName + " (modified)");
+            }
+        }
+        // case3: Staged for addition, but deleted in the working directory; or
+        for (String fileName : stage.getAdded().keySet()) {
+            if (!currentFiles.contains(fileName)) {
+                res.add(fileName + " (deleted)");
+            }
+        }
+        // case4: Not staged for removal, but tracked in the current commit and deleted from the
+        // working directory.
+        for (String fileName : head.getBlobs().keySet()) {
+            boolean stagedForRemoval = stage.getRemoved().contains(fileName);
+            boolean cwdContains = currentFiles.contains(fileName);
+            if (!stagedForRemoval && !cwdContains) {
+                res.add(fileName + " (deleted)");
+            }
+        }
+        Collections.sort(res);
+        return res;
+
+
+        // Set<String> headFiles = head.getBlobs().keySet();
+        // List<String> stagedFiles = stage.getStagedFilename();
+        //
+        // Set<String> allFiles = new HashSet<>();
+        // allFiles.addAll(currentFiles);
+        // allFiles.addAll(headFiles);
+        // allFiles.addAll(stagedFiles);
+        //
+        // for (String filename : allFiles) {
+        //     if (!currentFiles.contains(filename)) {
+        //         if (stage.getAdded().containsKey(filename) ||
+        //            (headFiles.contains(filename) && !stagedFiles.contains(filename))) {
+        //             res.add(filename + " (deleted)");
+        //         }
+        //     } else {
+        //         String bId = new Blob(filename, CWD).getId();
+        //         String sId = stage.getAdded().getOrDefault(filename, "");
+        //         String hId = head.getBlobs().getOrDefault(filename, "");
+        //         if ((hId != "" && hId != bId && sId == "") ||
+        //             (sId != "" && sId != bId)){
+        //             res.add(filename + " (modified)");
+        //         }
+        //     }
+        // }
+        //
+        // Collections.sort(res);
+        // return res;
     }
 
     /**
@@ -772,7 +845,8 @@ public class Repository {
 
     private static Commit getCommitFromId(String commitId) {
         File file = join(COMMIT_DIR, commitId);
-        if (commitId.equals("null") || !file.exists()) {
+        // original: commitId.equals("null") ...
+        if (commitId.equals("") || !file.exists()) {
             return null;
         }
         return readObject(file, Commit.class);
@@ -788,7 +862,7 @@ public class Repository {
 
     /**
      * @param blobId for file Name
-     * @param blob for file contents
+     * @param blob for file Contents
      */
     private static void writeBlobToStaging(String blobId, Blob blob) {
         writeObject(join(STAGING_DIR, blobId), blob);
