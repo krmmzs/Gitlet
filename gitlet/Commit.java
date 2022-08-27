@@ -115,10 +115,6 @@ public class Commit implements Serializable {
         return this.parents;
     }
 
-    // public File getSaveFile() {
-    //     return saveFile;
-    // }
-
     public String getDateString() {
         DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
         return df.format(timestamp);
