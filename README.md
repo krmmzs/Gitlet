@@ -85,3 +85,34 @@ Real Git does a more subtle job of merging files, displaying conflicts only in p
 Real Git has a different way to decide which of multiple possible split points to use.
 Real Git will force the user to resolve the merge conflicts before committing to complete the merge. Gitlet just commits the merge, conflicts and all, so that you must use a separate commit to resolve problems.
 Real Git will complain if there are unstaged changes to a file that would be changed by a merge. You may do so as well if you want, but we will not test that case.
+
+### add-remote
+
+Usage: `java gitlet.Main add-remote [remote name] [name of remote directory]/.gitlet`
+
+Saves the given login information under the given remote name.
+
+### rm-remote
+
+Usage: `java gitlet.Main rm-remote [remote name]`
+
+Remove information associated with the given remote name.
+
+### push
+
+Usage: `java gitlet.Main push [remote name] [remote branch name]`
+
+Attempts to append the current branch’s commits to the end of the given branch at the given remote.
+
+### fetch
+
+Usage: `java gitlet.Main fetch [remote name] [remote branch name]`
+
+Brings down commits from the remote Gitlet repository into the local Gitlet repository.
+
+### pull
+
+Usage: `java gitlet.Main pull [remote name] [remote branch name]`
+
+Fetches branch `[remote name]/[remote branch name]` as for the `fetch` command, and then merges that fetch into the current branch.
+
