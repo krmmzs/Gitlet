@@ -1,9 +1,7 @@
 package gitlet;
 
-import static gitlet.Utils.join;
 import static gitlet.Utils.sha1;
 
-import java.io.File;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,7 +26,6 @@ import java.util.Map;
  *  @author krmmzs
  */
 public class Commit implements Serializable {
-    //TODO: more lazy loading.
 
     /**
      * The message of this Commit.
@@ -54,7 +51,7 @@ public class Commit implements Serializable {
     /**
      * The cache of saveFile.
      */
-    private final File saveFile;
+    // private final File saveFile;
 
     /**
      * <pre>
@@ -72,7 +69,7 @@ public class Commit implements Serializable {
         this.parents = new LinkedList<>();
         this.blobs = new HashMap<>();
         this.id = sha1(message, timestamp.toString()); // init's id(sha1) is special.
-        this.saveFile = generateSaveFile();
+        // this.saveFile = generateSaveFile();
     }
 
     public Commit(String message, List<Commit> parents, Stage stage) {
@@ -95,7 +92,7 @@ public class Commit implements Serializable {
         }
         // this.blobs = blobs;
         this.id = generateId();
-        this.saveFile = generateSaveFile();
+        // this.saveFile = generateSaveFile();
     }
 
     public HashMap<String, String> getBlobs() {
@@ -118,22 +115,13 @@ public class Commit implements Serializable {
         return this.parents;
     }
 
-    public File getSaveFile() {
-        return saveFile;
-    }
+    // public File getSaveFile() {
+    //     return saveFile;
+    // }
 
     public String getDateString() {
         DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
         return df.format(timestamp);
-    }
-
-    /**
-     * Generate saveFile.
-     *
-     * @return SaveFile by id.
-     */
-    private File generateSaveFile() {
-        return join(Repository.COMMIT_DIR, id); // now, without Tries firstly...
     }
 
 

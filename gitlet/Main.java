@@ -27,85 +27,111 @@ public class Main {
             exit("Please enter a command.");
         }
 
+        Repository repo = new Repository();
         String firstArg = args[0];
         switch(firstArg) {
             case "init" -> {
                 validateNumArgs(args, 1);
-                Repository.init();
+                repo.init();
             }
             case "add" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.add(args[1]);
+                repo.checkInit();
+                repo.add(args[1]);
             }
             case "commit" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.commit(args[1]);
+                repo.checkInit();
+                repo.commit(args[1]);
             }
             case "rm" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.rm(args[1]);
+                repo.checkInit();
+                repo.rm(args[1]);
             }
             case "log" -> {
                 validateNumArgs(args, 1);
-                Repository.checkInit();
-                Repository.log();
+                repo.checkInit();
+                repo.log();
             }
             case "global-log" -> {
                 validateNumArgs(args, 1);
-                Repository.checkInit();
-                Repository.globalLog();
+                repo.checkInit();
+                repo.globalLog();
             }
             case "find" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.find(args[1]);
+                repo.checkInit();
+                repo.find(args[1]);
             }
             case "status" -> {
                 validateNumArgs(args, 1);
-                Repository.checkInit();
-                Repository.status();
+                repo.checkInit();
+                repo.status();
             }
             case "checkout" -> {
                 if (args.length < 2 || args.length > 4) {
                     exit("Incorrect operands.");
                 }
-                Repository.checkInit();
+                repo.checkInit();
                 if (args.length == 2) {
                     // java gitlet.Main checkout [branch name]
-                    Repository.checkoutBranch(args[1]);
+                    repo.checkoutBranch(args[1]);
                 } else if (args.length == 3) {
                     // java gitlet.Main checkout -- [file name]
                     isEqual(args[1], "--");
-                    Repository.checkoutFileFromHead(args[2]);
+                    repo.checkoutFileFromHead(args[2]);
                 }
                 else if (args.length == 4) {
                     // java gitlet.Main checkout [commit id] -- [file name]
                     isEqual(args[2], "--");
-                    Repository.checkoutFileFromCommitId(args[1], args[3]);
+                    repo.checkoutFileFromCommitId(args[1], args[3]);
                 }
             }
             case "branch" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.branch(args[1]);
+                repo.checkInit();
+                repo.branch(args[1]);
             }
             case "rm-branch" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.rmBranch(args[1]);
+                repo.checkInit();
+                repo.rmBranch(args[1]);
             }
             case "reset" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.reset(args[1]);
+                repo.checkInit();
+                repo.reset(args[1]);
             }
             case "merge" -> {
                 validateNumArgs(args, 2);
-                Repository.checkInit();
-                Repository.merge(args[1]);
+                repo.checkInit();
+                repo.merge(args[1]);
+            }
+            case "add-remote" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.addRemote(args[1], args[2]);
+            }
+            case "rm-remote" -> {
+                validateNumArgs(args, 2);
+                repo.checkInit();
+                repo.rmRemote(args[1]);
+            }
+            case "push" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.push(args[1], args[2]);
+            }
+            case "fetch" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.fetch(args[1], args[2]);
+            }
+            case "pull" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.pull(args[1], args[2]);
             }
             default -> exit("No command with that name exists.");
         }
