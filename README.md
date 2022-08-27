@@ -1,6 +1,24 @@
 # Gitlet
 An independant implementation of a mini version of Git
 
+## Information
+
+### Real Git
+
+- **blobs**: The saved contents of files. Since Gitlet saves many versions of files, a single file might correspond to multiple blobs: each being tracked in a different commit.
+
+- **trees**: Directory structures mapping names to references to blobs and other trees (subdirectories).
+
+- **commits**: Combinations of log messages, other metadata (commit date, author, etc.), a reference to a tree, and references to parent commits. The repository also maintains a mapping from branch heads to references to commits, so that certain important commits have symbolic names. 
+
+### Simplifies from Git still further by
+
+- Incorporating trees into commits and not dealing with subdirectories (so there will be one “flat” directory of plain files for each repository).
+
+- Limiting ourselves to merges that reference two parents (in real Git, there can be any number of parents.)
+
+- Having our metadata consist only of a timestamp and log message. A commit, therefore, will consist of a log message, timestamp, a mapping of file names to blob references, a parent reference, and (for merges) a second parent reference.
+
 ## Command
 
 ### init
@@ -115,4 +133,4 @@ Brings down commits from the remote Gitlet repository into the local Gitlet repo
 Usage: `java gitlet.Main pull [remote name] [remote branch name]`
 
 Fetches branch `[remote name]/[remote branch name]` as for the `fetch` command, and then merges that fetch into the current branch.
-
+Fetches branch `[remote name]/[remote branch name]` as for the `fetch` command, and then merges that fetch into the current branch.
