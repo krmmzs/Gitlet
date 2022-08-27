@@ -20,51 +20,51 @@ public class Repository {
     /**
      * The current working directory(work tree).
      */
-    public File CWD;
+    private File CWD;
     /**
      * The .gitlet directory.(worktree/.git).
      */
-    public File GITLET_DIR;
+    private File GITLET_DIR;
 
 
     /** 
      * The stage Object.(replace index)
      */
-    public File STAGE;
+    private File STAGE;
 
     /**
      * The Objects directory, stores commits and blobs.
      */
-    public File OBJECTS_DIR;
+    private File OBJECTS_DIR;
 
     /**
      * The staging directory, restores staging Blobs.
      */
-    public File STAGING_DIR;
+    private File STAGING_DIR;
 
     /**
      * The Objects directory, stores committed blobs.
      */
-    public File BLOBS_DIR;
+    private File BLOBS_DIR;
     /**
      * The commits directory.
      */
-    public File COMMIT_DIR;
+    private File COMMIT_DIR;
 
     // The branches directory(Mimicking .git).
 
     /**
      * The reference directory.
      */
-    public File REFS_DIR;
+    private File REFS_DIR;
     /**
      * The heads directory.
      */
-    public File HEADS_DIR;
+    private File HEADS_DIR;
     /**
      * The remotes directory.
      */
-    public File REMOTES_DIR;
+    private File REMOTES_DIR;
 
     /**
      * stores current branch's name if it points to tip
@@ -303,7 +303,6 @@ public class Repository {
         }
         sb.append("\n");
 
-        // TODO: status ec
         sb.append("=== Modifications Not Staged For Commit ===\n");
         List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage);
         for (String str : modifiedFiles) {
@@ -567,8 +566,9 @@ public class Repository {
     }
 
     /**
-     * remoteName -> remotePath
-     * Attempts to append the current branch’s commits to the end of the given branch at the given remote. 
+     * remoteName -> remotePath.
+     * Attempts to append the current branch’s commits to
+     * the end of the given branch at the given remote. 
      * @param remoteName
      * @param branchName
      */
@@ -585,15 +585,25 @@ public class Repository {
             exit("Please pull down remote changes before pushing.");
         }
 
-        // append the future commits to the remote branch
+        // If the Gitlet system on the remote machine exists but does not
+        // have the input branch, then simply add the branch to the remote Gitlet.
+        File remoteBranch = join(remote.HEADS_DIR, remoteBranchName);
+        if (!remoteBranch.exists()) {
+            remote.branch(remoteBranchName);
+        }
+
+        // append the future commits to the remote branch.
         for (String commitId : history) {
+            // until the end of the given branch at the given remote.
             if (commitId.equals(remoteHead.getId())) {
                 break;
             }
             Commit commit = getCommitFromId(commitId);
+            // cp commit's persisting contents.
             File remoteCommit = join(remote.COMMIT_DIR, commitId);
-            writeContents(remoteCommit, commit);
+            writeObject(remoteCommit, commit);
 
+            // cp commit's blobs's persisting contents to remote.
             if (!commit.getBlobs().isEmpty()) {
                 for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
                     String blobId = entry.getValue();
@@ -610,6 +620,71 @@ public class Repository {
         remote.reset(head.getId());
     }
 
+    /**
+     * Brings down commits from the remote Gitlet repository
+     * into the local Gitlet repository.
+     * @param remoteName
+     * @param remoteBranchName
+     */
+    public void fetch(String remoteName, String remoteBranchName) {
+        File remotePath = getRemotePath(remoteName);
+
+        Repository remote = new Repository(remotePath.getParent());
+
+        File remoteBranchFile = remote.getBranchFile(remoteBranchName);
+        if (remoteBranchFile == null || !remoteBranchFile.exists()) {
+            exit("That remote does not have that branch.");
+        }
+
+        Commit remoteBranchCommit = remote.getCommitFromBranchFile(remoteBranchFile);
+        // This branch is created in the local repository
+        // if it did not previously exist.
+        File branch = join(REMOTES_DIR, remoteName, remoteBranchName);
+        writeContents(branch, remoteBranchCommit.getId());
+
+        // copies all commits and blobs from the given
+        // branch in the remote repository.
+        List<String> history = remote.getHistory(remoteBranchCommit);
+
+        for (String commitId : history) {
+            Commit commit = remote.getCommitFromId(commitId);
+            File commitFile = join(COMMIT_DIR, commit.getId());
+            if (commitFile.exists()) {
+                continue;
+            }
+            writeObject(commitFile, commit);
+
+            if (commit.getBlobs().isEmpty()) {
+                continue;
+            }
+            for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
+                String blobId = entry.getValue();
+                Blob blob = remote.getBlobFromId(blobId);
+
+                File blobFile = join(BLOBS_DIR, blobId);
+                writeObject(blobFile, blob);
+            }
+        }
+    }
+
+    /**
+     * Fetches branch [remote name]/[remote branch name] 
+     * as for the fetch command, and then merges that fetch into the current branch.
+     * @param remoteName
+     * @param remoteBranchName
+     */
+    public void pull(String remoteName, String remoteBranchName) {
+        fetch(remoteName, remoteBranchName);
+
+        String otherBranchName = remoteName + "/" + remoteBranchName;
+        merge(otherBranchName);
+    }
+
+    /**
+     * bfs get the history commits.
+     * @param head
+     * @return
+     */
     private List<String> getHistory(Commit head) {
         List<String> res = new LinkedList<>();
         Queue<Commit> queue = new LinkedList<>();
@@ -761,7 +836,7 @@ public class Repository {
         List<String> untrackedFiles = getUntrackedFiles();
         for (String fileName : untrackedFiles) {
             if (remove.contains(fileName) || rewrite.contains(fileName)
-            || conflict.contains(fileName)) {
+                || conflict.contains(fileName)) {
                 exit("There is an untracked file in the way;"
                     + " delete it, or add and commit it first.");
             }

@@ -1,9 +1,7 @@
 package gitlet;
 
-import static gitlet.Utils.join;
 import static gitlet.Utils.sha1;
 
-import java.io.File;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,7 +26,6 @@ import java.util.Map;
  *  @author krmmzs
  */
 public class Commit implements Serializable {
-    //TODO: more lazy loading.
 
     /**
      * The message of this Commit.
@@ -126,15 +123,6 @@ public class Commit implements Serializable {
         DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
         return df.format(timestamp);
     }
-
-    /**
-     * Generate saveFile.
-     *
-     * @return SaveFile by id.
-     */
-    // private File generateSaveFile() {
-    //     return join(COMMIT_DIR, id); // now, without Tries firstly...
-    // }
 
 
     /**

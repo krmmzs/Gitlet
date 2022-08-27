@@ -119,9 +119,19 @@ public class Main {
                 repo.rmRemote(args[1]);
             }
             case "push" -> {
-                validateNumArgs(args, 2);
+                validateNumArgs(args, 3);
                 repo.checkInit();
                 repo.push(args[1], args[2]);
+            }
+            case "fetch" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.fetch(args[1], args[2]);
+            }
+            case "pull" -> {
+                validateNumArgs(args, 3);
+                repo.checkInit();
+                repo.pull(args[1], args[2]);
             }
             default -> exit("No command with that name exists.");
         }

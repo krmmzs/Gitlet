@@ -9,7 +9,6 @@ import static gitlet.Utils.*;
 /**
  * Blob
  */
-// TODO: more lazy loading.
 public class Blob implements Serializable {
     /**
      * The reference to the Blob.
