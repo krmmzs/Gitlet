@@ -10,11 +10,10 @@ import static gitlet.Utils.*;
  * Blob
  */
 public class Blob implements Serializable {
-    // TODO: lazy load.
+
     /**
      * The reference to the Blob.
      */
-
     private String id;
 
     /**
@@ -56,6 +55,18 @@ public class Blob implements Serializable {
         return content;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public boolean exists() {
+        return this.content != null;
+    }
+
+    public String getContentAsString() {
+        return new String(content, StandardCharsets.UTF_8);
+    }
+
     private byte[] generateContent() {
         File file = join(cwd, fileName);
         if (file.exists()) {
@@ -73,23 +84,4 @@ public class Blob implements Serializable {
             return sha1(fileName);
         }
     }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public boolean exists() {
-        return this.content != null;
-    }
-
-    public String getContentAsString() {
-        return new String(content, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * @return save filename:id File.(like git)
-     */
-    // private File generateSaveFile() {
-    //     return join(Repository.BLOBS_DIR, id);
-    // }
 }
