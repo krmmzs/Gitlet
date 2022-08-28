@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.function.Supplier;
 
 
 /** Assorted utilities.
@@ -245,6 +246,17 @@ class Utils {
     public static void exit(String message, Object... args) {
         message(message, args);
         System.exit(0);
+    }
+
+    /**
+     * Get a lazy initialized value.
+     *
+     * @param delegate Function to get the value
+     * @param <T>      Type of the value
+     * @return Lazy instance
+     */
+    public static <T> Lazy<T> lazy(Supplier<T> delegate) {
+        return new Lazy<>(delegate);
     }
 
 

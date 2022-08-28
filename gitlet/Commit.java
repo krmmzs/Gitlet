@@ -50,7 +50,7 @@ public class Commit implements Serializable {
     /**
      * Cache for parents
      */
-    private List<Commit> parentsExt;
+    private transient List<Commit> parentsExt;
 
     /**
      * Cache for stage.

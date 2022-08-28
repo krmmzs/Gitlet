@@ -76,6 +76,18 @@ public class Repository {
 
     private String DEFAULT_BRANCH;
 
+    /**
+     * Lazy load for the current branch name.
+     */
+    private final Lazy<String> headBranchName = lazy(() -> {
+        String headBranchName = readContentsAsString(HEAD);
+        return headBranchName;
+    });
+
+    private final Lazy<Commit> head = lazy(() -> getHead());
+
+    private final Lazy<Stage> stage = lazy(() -> readStage());
+
     public Repository() {
         this.CWD = new File(System.getProperty("user.dir"));
         configDIRS();
@@ -161,13 +173,10 @@ public class Repository {
         String blobId = blob.getId();
 
         // gettheHeadCommit
-        Commit head = getHead();
-        // get the Stage
-        Stage stage = readStage();
         // using file name to find file in current Commit.
-        String headBlobId = head.getBlobs().getOrDefault(fileName, "");
+        String headBlobId = head.get().getBlobs().getOrDefault(fileName, "");
         // usign file name to find file in stage.
-        String stageBlobId = stage.getAdded().getOrDefault(fileName, "");
+        String stageBlobId = stage.get().getAdded().getOrDefault(fileName, "");
 
         // the current working version of the file is identical to 
         // the version in the current commit do not stage it be added.
@@ -176,9 +185,9 @@ public class Repository {
             // delete the file from staging
             join(STAGING_DIR, stageBlobId).delete();
 
-            stage.getAdded().remove(fileName);
-            stage.getRemoved().remove(fileName);
-            writeStage(stage);
+            stage.get().getAdded().remove(fileName);
+            stage.get().getRemoved().remove(fileName);
+            writeStage(stage.get());
         } else if (!blobId.equals(stageBlobId)) {
             // update new version
 
@@ -188,8 +197,8 @@ public class Repository {
             }
             writeBlobToStaging(blobId, blob);
 
-            stage.add(fileName, blobId);
-            writeStage(stage);
+            stage.get().add(fileName, blobId);
+            writeStage(stage.get());
         }
     }
 
@@ -200,18 +209,14 @@ public class Repository {
         // get the current commit
         // get the stage
         // gettheHeadCommit
-        Commit head = getHead();
-        commitWith(msg, List.of(head));
+        commitWith(msg, List.of(head.get()));
     }
 
     public void rm(String fileName) {
         File file = join(CWD, fileName);
 
-        Commit head = getHead();
-        Stage stage = readStage();
-
-        String headBlobId = head.getBlobs().getOrDefault(fileName, "");
-        String stageBlobId = stage.getAdded().getOrDefault(fileName, "");
+        String headBlobId = head.get().getBlobs().getOrDefault(fileName, "");
+        String stageBlobId = stage.get().getAdded().getOrDefault(fileName, "");
 
         if (headBlobId.equals("") && stageBlobId.equals("")) {
             exit("No reason to remove the file.");
@@ -219,10 +224,10 @@ public class Repository {
 
         // Unstage the file if it is currently staged for addition.
         if (!stageBlobId.equals("")) {
-            stage.getAdded().remove(fileName);
+            stage.get().getAdded().remove(fileName);
         } else {
             // stage it for removal
-            stage.getRemoved().add(fileName);
+            stage.get().getRemoved().add(fileName);
         }
 
         Blob blob = new Blob(fileName, CWD);
@@ -236,7 +241,7 @@ public class Repository {
             restrictedDelete(file);
         }
 
-        writeStage(stage);
+        writeStage(stage.get());
     }
 
     public void log() {
@@ -290,21 +295,20 @@ public class Repository {
         }
         sb.append("\n");
 
-        Stage stage = readStage();
         sb.append("=== Staged Files ===\n");
-        for (String fileName : stage.getAdded().keySet()) {
+        for (String fileName : stage.get().getAdded().keySet()) {
             sb.append(fileName + "\n");
         }
         sb.append("\n");
 
         sb.append("=== Removed Files ===\n");
-        for (String fileName : stage.getRemoved()) {
+        for (String fileName : stage.get().getRemoved()) {
             sb.append(fileName + "\n");
         }
         sb.append("\n");
 
         sb.append("=== Modifications Not Staged For Commit ===\n");
-        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage);
+        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage.get());
         for (String str : modifiedFiles) {
             sb.append(str + "\n");
         }
@@ -340,9 +344,8 @@ public class Repository {
             exit("No such branch exists.");
         }
 
-        String headBranchName = getHeadBranchName();
         // If that branch is the current branch,
-        if (headBranchName.equals(branchName)) {
+        if (headBranchName.get().equals(branchName)) {
             exit("No need to checkout the current branch.");
         }
 
@@ -364,8 +367,7 @@ public class Repository {
      * @param branchName
      */
     public void checkoutFileFromHead(String fileName) {
-        Commit head = getHead();
-        checkoutFileFromCommit(fileName, head);
+        checkoutFileFromCommit(fileName, head.get());
     }
 
     /**
@@ -408,8 +410,7 @@ public class Repository {
             exit("A branch with that name does not exist.");
         }
 
-        String headBranchName = getHeadBranchName();
-        if (headBranchName.equals(branchName)) {
+        if (headBranchName.get().equals(branchName)) {
             exit("Cannot remove the current branch.");
         }
 
@@ -439,8 +440,7 @@ public class Repository {
         clearStage(readStage());
 
         // Also moves the current branch’s head to that commit node.
-        String headBranchName = getHeadBranchName();
-        writeContents(join(HEADS_DIR, headBranchName), commitId);
+        writeContents(join(HEADS_DIR, headBranchName.get()), commitId);
     }
 
     /**
@@ -458,8 +458,7 @@ public class Repository {
      */
     public void merge(String otherBranchName) {
         // If there are staged additions or removals present,
-        Stage stage = readStage();
-        if (!stage.isEmpty()) {
+        if (!stage.get().isEmpty()) {
             exit("You have uncommitted changes.");
         }
 
@@ -470,8 +469,7 @@ public class Repository {
         }
 
 
-        String headBranchName = getHeadBranchName();
-        if (headBranchName.equals(otherBranchName)) {
+        if (headBranchName.get().equals(otherBranchName)) {
             exit("Cannot merge a branch with itself.");
         }
 
@@ -479,10 +477,9 @@ public class Repository {
 
         // get head commit and other commit
         // Commit head = getCommitFromBranchName(headBranchName);
-        Commit head = getHead();
         Commit other = getCommitFromBranchFile(otherBranchFile);
         // get lca
-        Commit lca = getLca(head, other);
+        Commit lca = getLca(head.get(), other);
 
         // If the split point is the same commit as the given branch, then we do nothing(don't exit)
         if (lca.getId().equals(other.getId())) {
@@ -492,16 +489,16 @@ public class Repository {
 
         // If the split point is the current branch,
         // then the effect is to check out the given branch
-        if (lca.getId().equals(head.getId())) {
+        if (lca.getId().equals(head.get().getId())) {
             checkoutBranch(otherBranchName);
             System.out.println("Current branch fast-forwarded.");
             return;
         }
 
-        mergeWithLca(lca, head, other);
+        mergeWithLca(lca, head.get(), other);
 
-        String msg = "Merged " + otherBranchName + " into " + headBranchName + ".";
-        List<Commit> parents = List.of(head, other);
+        String msg = "Merged " + otherBranchName + " into " + headBranchName.get() + ".";
+        List<Commit> parents = List.of(head.get(), other);
         commitWith(msg, parents);
     }
 
@@ -576,9 +573,8 @@ public class Repository {
         File remotePath = getRemotePath(remoteName);
         Repository remote = new Repository(remotePath.getParent());
 
-        Commit head = getHead();
         Commit remoteHead = remote.getHead();
-        List<String> history = getHistory(head);
+        List<String> history = getHistory(head.get());
         // If the remote branch’s head is not in the
         // history of the current local head.
         if (!history.contains(remoteHead.getId())) {
@@ -617,7 +613,7 @@ public class Repository {
 
         // Then, the remote should reset to the front of
         // the appended commits.
-        remote.reset(head.getId());
+        remote.reset(head.get().getId());
     }
 
     /**
@@ -1121,15 +1117,14 @@ public class Repository {
     }
 
     private void commitWith(String msg, List<Commit> parents) {
-        Stage stage = readStage();
         // If no files have been staged, abort
-        if (stage.isEmpty()) {
+        if (stage.get().isEmpty()) {
             exit("No changes added to the commit.");
         }
 
-        Commit commit = new Commit(msg, parents, stage);
+        Commit commit = new Commit(msg, parents, stage.get());
         // The staging area is cleared after a commit.
-        clearStage(stage);
+        clearStage(stage.get());
         writeCommitToFile(commit);
 
         updateBranch(commit);
@@ -1140,7 +1135,7 @@ public class Repository {
      * @param stage
      */
     private void clearStage(Stage stage) {
-        File[] files = STAGING_DIR.listFiles();
+        File[] files = STAGING_DIR.listFiles(File::isFile);
         if (files == null) {
             return;
         }
@@ -1193,13 +1188,11 @@ public class Repository {
      * @return Untracked Files's Name
      */
     private List<String> getUntrackedFiles() {
-        Commit head = getHead();
-        Stage stage = readStage();
         List<String> res = new ArrayList<>();
         List<String> cwdFileNames = plainFilenamesIn(CWD);
         for (String fileName : cwdFileNames) {
-            boolean tracked = head.getBlobs().containsKey(fileName);
-            boolean staged = stage.getAdded().containsKey(fileName);
+            boolean tracked = head.get().getBlobs().containsKey(fileName);
+            boolean staged = stage.get().getAdded().containsKey(fileName);
             // untracked files
             if (!staged && !tracked) {
                 res.add(fileName);
