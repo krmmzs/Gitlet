@@ -26,6 +26,7 @@ import java.util.Map;
  *  @author krmmzs
  */
 public class Commit implements Serializable {
+    // TODO: lazy load.
 
     /**
      * The message of this Commit.

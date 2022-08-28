@@ -10,21 +10,27 @@ import static gitlet.Utils.*;
  * Blob
  */
 public class Blob implements Serializable {
+    // TODO: lazy load.
     /**
      * The reference to the Blob.
      */
 
-    private final String id;
+    private String id;
 
     /**
      * The content of the Bolb.
      */
-    private final byte[] content;
+    private byte[] content;
 
     /**
      * Cache of file name.
      */
-    private final String fileName;
+    private String fileName;
+
+    /**
+     * File create path.
+     */
+    private File cwd;
 
     /**
      * construct Blob with file name and where.
@@ -33,26 +39,39 @@ public class Blob implements Serializable {
      */
     public Blob(String fileName, File cwd) {
         this.fileName = fileName;
-        File file = join(cwd, fileName);
-        if (file.exists()) {
-            this.content = readContents(file);
-            this.id = generateId();
-        } else {
-            this.content = null;
-            this.id = sha1(fileName);
-        }
+        this.cwd = cwd;
     }
 
     public String getId() {
-        return id;
+        if (id == null) {
+            this.id = generateId();
+        }
+        return this.id;
     }
 
     public byte[] getContent() {
+        if (content == null) {
+            this.content = generateContent();
+        }
         return content;
     }
 
+    private byte[] generateContent() {
+        File file = join(cwd, fileName);
+        if (file.exists()) {
+            return readContents(file);
+        } else {
+            return null;
+        }
+    }
+
     private String generateId() {
-        return sha1(fileName, content);
+        File file = join(cwd, fileName);
+        if (file.exists()) {
+            return sha1(fileName, this.getContent());
+        } else {
+            return sha1(fileName);
+        }
     }
 
     public String getFileName() {
