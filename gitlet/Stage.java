@@ -11,7 +11,6 @@ import java.util.Set;
  * Stage
  */
 public class Stage implements Serializable {
-    // TODO: lazy load.
 
     /**
      * Staged for addition.
@@ -54,7 +53,6 @@ public class Stage implements Serializable {
     public ArrayList<String> getStagedFileName() {
         ArrayList<String> res = new ArrayList<>();
         res.addAll(added.keySet());
-        // res.addAll(removed);
         return res;
     }
 }

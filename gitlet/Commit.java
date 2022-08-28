@@ -26,33 +26,36 @@ import java.util.Map;
  *  @author krmmzs
  */
 public class Commit implements Serializable {
-    // TODO: lazy load.
 
     /**
      * The message of this Commit.
      */
-    private final String message;
+    private String message;
 
     /**
      * The timestamp of this Commit.
      */
-    private final Date timestamp;
+    private Date timestamp;
 
     /**
      * The id(SHA1) of this Commit.
      */
-    private final String id;
+    private String id;
 
     /**
-     * The parents of this Commit.
+     * The parents of this Commit(id->String).
      */
-    private final List<String> parents;
-
+    private List<String> parents;
 
     /**
-     * The cache of saveFile.
+     * Cache for parents
      */
-    // private final File saveFile;
+    private List<Commit> parentsExt;
+
+    /**
+     * Cache for stage.
+     */
+    private Stage stage;
 
     /**
      * <pre>
@@ -61,7 +64,7 @@ public class Commit implements Serializable {
      * filename, blob's id.
      * <pre>
      */
-    private final HashMap<String, String> blobs;
+    private HashMap<String, String> blobs;
 
 
     public Commit() {
@@ -70,33 +73,19 @@ public class Commit implements Serializable {
         this.parents = new LinkedList<>();
         this.blobs = new HashMap<>();
         this.id = sha1(message, timestamp.toString()); // init's id(sha1) is special.
-        // this.saveFile = generateSaveFile();
     }
 
-    public Commit(String message, List<Commit> parents, Stage stage) {
+    public Commit(String message, List<Commit> parentsExt, Stage stage) {
         this.message = message;
         this.timestamp = new Date();
-        // this.parents = parents;
-        this.parents = new ArrayList<>(2);
-        for (Commit t : parents) {
-            this.parents.add(t.getId());
-        }
-        this.blobs = parents.get(0).getBlobs(); // using first parent blobs
-
-        for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
-            String fileName = entry.getKey();
-            String blobId = entry.getValue();
-            blobs.put(fileName, blobId); // if same fileName, different blobId, will update
-        }
-        for (String fileName : stage.getRemoved()) {
-            blobs.remove(fileName);
-        }
-        // this.blobs = blobs;
-        this.id = generateId();
-        // this.saveFile = generateSaveFile();
+        this.parentsExt = parentsExt;
+        this.stage = stage;
     }
 
     public HashMap<String, String> getBlobs() {
+        if (this.blobs == null) {
+            generateBlobs();
+        }
         return this.blobs;
     }
 
@@ -109,11 +98,24 @@ public class Commit implements Serializable {
     }
 
     public String getId() {
+        if (this.id == null) {
+            this.id = generateId();
+        }
         return this.id;
     }
 
     public List<String> getParents() {
+        if (this.parents == null) {
+            generateParents();
+        }
         return this.parents;
+    }
+
+    private void generateParents() {
+        this.parents = new ArrayList<>(2);
+        for (Commit t : this.parentsExt) {
+            this.parents.add(t.getId());
+        }
     }
 
     public String getDateString() {
@@ -121,17 +123,10 @@ public class Commit implements Serializable {
         return df.format(timestamp);
     }
 
-
-    /**
-     * Generate id.
-     *
-     * @return id by message, Timestamp, pearents, blobs.
-     */
-    private String generateId() {
-        return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
-    }
-
     public String getFirstParentId() {
+        if (parents == null) {
+            generateParents();
+        }
         if (parents.isEmpty()) {
             // original return "null"
             return "";
@@ -151,4 +146,31 @@ public class Commit implements Serializable {
         sb.append(this.message + "\n\n");
         return sb.toString();
     }
+
+    /**
+     * Lazy load generate id.
+     *
+     * @return id by message, Timestamp, pearents, blobs.
+     */
+    private String generateId() {
+        if (parents == null) {
+            generateParents();
+        }
+        if (blobs == null) {
+            generateBlobs();
+        }
+        return sha1(message, timestamp.toString(), parents.toString(), blobs.toString());
+    }
+
+    private void generateBlobs() {
+        this.blobs = parentsExt.get(0).getBlobs(); // using first parent blobs
+        for (Map.Entry<String, String> entry : stage.getAdded().entrySet()) {
+            String fileName = entry.getKey();
+            String blobId = entry.getValue();
+            blobs.put(fileName, blobId); // if same fileName, different blobId, will update
+        }
+        for (String fileName : stage.getRemoved()) {
+            blobs.remove(fileName);
+        }
+    } 
 }
