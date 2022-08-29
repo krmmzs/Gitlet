@@ -11,6 +11,7 @@ import java.util.Set;
  * Stage
  */
 public class Stage implements Serializable {
+    // TODO: convert to index file.
 
     /**
      * Staged for addition.

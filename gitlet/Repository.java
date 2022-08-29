@@ -119,33 +119,27 @@ public class Repository {
         }
         // create directory (.gitlet)
         createInitDir();
-
         // inital commit
         Commit initialCommit = new Commit();
         // initialCommit.saveCommit();
         writeCommitToFile(initialCommit);
-
-        // create Master
-        // create HEAD
-        String id = initialCommit.getId();
-        // String branchName = "master";
-        File defaultBranch = join(HEADS_DIR, DEFAULT_BRANCH);
-        writeContents(defaultBranch, id); // .gitlet/refs/heads/master
-        writeContents(HEAD, DEFAULT_BRANCH); // .gitlet/HEAD
-        writeContents(CONFIG, "");
+        initReference(initialCommit.getId());
+        // init config file required firsttly.
+        createConfigFile();
     }
+
 
     private void createInitDir() {
         // Need to pay attention to the order
         GITLET_DIR.mkdir();
         OBJECTS_DIR.mkdir();
-        writeObject(STAGE, new Stage());
         STAGING_DIR.mkdir();
         BLOBS_DIR.mkdir();
         COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
         REMOTES_DIR.mkdir();
+        createStage();
     }
 
     public void checkInit() {
@@ -155,22 +149,26 @@ public class Repository {
     }
 
     /** 
+     * <pre>
      * 1. staging the file for addition
+     * (adding a file is also called staging the file for addition.)
      * 2. If the current working version of the file is identical
      * to the version in the current commit, do not stage it to be added
      * and remove it from the staging area if it is already there(
      * as can happen when a file is changed, added, and then changed
      * back to it’s original version)
+     * <pre>
      * @param fileName added file name.
      */
     public void add(String fileName) {
-        File file = join(CWD, fileName); // get file from CWD
+        // get file from CWD
+        File file = join(CWD, fileName);
         if (!file.exists()) {
             exit("File does not exist.");
         }
 
-        Blob blob = new Blob(fileName, CWD); // using file name to instance this blob.
-        String blobId = blob.getId();
+        Blob cwdBlob = new Blob(fileName, CWD); // using file name to instance this blob.
+        String cwdBlobId = cwdBlob.getId();
 
         // gettheHeadCommit
         // using file name to find file in current Commit.
@@ -179,27 +177,25 @@ public class Repository {
         String stageBlobId = stage.get().getAdded().getOrDefault(fileName, "");
 
         // the current working version of the file is identical to 
-        // the version in the current commit do not stage it be added.
-        // and remove it from the staging area if it is already there
-        if (blobId.equals(headBlobId)) {
+        // the version in the current commit do not stage it be added
+        // and remove it from the staging area if it is already there.
+        if (cwdBlobId.equals(headBlobId)) {
             // delete the file from staging
             join(STAGING_DIR, stageBlobId).delete();
 
             stage.get().getAdded().remove(fileName);
             stage.get().getRemoved().remove(fileName);
             writeStage(stage.get());
-        } else if (!blobId.equals(stageBlobId)) {
+        } else if (!cwdBlobId.equals(stageBlobId)) {
             // update new version
-
-            // check no file
-            if (!stageBlobId.equals("")) {
-                join(STAGING_DIR, stageBlobId).delete();
-            }
-            writeBlobToStaging(blobId, blob);
-
-            stage.get().add(fileName, blobId);
-            writeStage(stage.get());
+            writeBlobToStaging(cwdBlobId, cwdBlob);
+            updateStageAddedBlob(fileName, cwdBlobId);
         }
+    }
+
+    private void updateStageAddedBlob(String fileName, String cwdBlobId) {
+        stage.get().add(fileName, cwdBlobId);
+        writeStage(stage.get());
     }
 
     public void commit(String msg) {
@@ -511,11 +507,11 @@ public class Repository {
      * @param remotePath
      */
     public void addRemote(String remoteName,  String remotePath) {
-        File remote = join(REMOTES_DIR, remoteName);
-        if (remote.exists()) {
+        File remoteFile = join(REMOTES_DIR, remoteName);
+        if (remoteFile.exists()) {
             exit("A remote with that name already exists.");
         }
-        remote.mkdir();
+        remoteFile.mkdir();
 
         // java.io.File.separator
         if (File.separator.equals("\\")) {
@@ -674,6 +670,27 @@ public class Repository {
 
         String otherBranchName = remoteName + "/" + remoteBranchName;
         merge(otherBranchName);
+    }
+
+    /**
+     * Init a config file.
+     */
+    private void createConfigFile() {
+        writeContents(CONFIG, "");
+    }
+
+    /**
+     * create Master and HEAD
+     * @param initialCommit
+     */
+    private void initReference(String id) {
+        File defaultBranchFile = join(HEADS_DIR, DEFAULT_BRANCH);
+        writeContents(defaultBranchFile, id); // .gitlet/refs/heads/master(defalut)
+        writeContents(HEAD, DEFAULT_BRANCH); // .gitlet/HEAD
+    }
+
+    private void createStage() {
+        writeObject(STAGE, new Stage());
     }
 
     /**
@@ -1035,6 +1052,7 @@ public class Repository {
         return readObject(file, Blob.class);
     }
 
+    // TODO: with directory tries abs.
     /**
      * @param commit Commit Object which will be Serialized.
      */
