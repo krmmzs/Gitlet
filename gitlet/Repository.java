@@ -119,33 +119,27 @@ public class Repository {
         }
         // create directory (.gitlet)
         createInitDir();
-
         // inital commit
         Commit initialCommit = new Commit();
         // initialCommit.saveCommit();
         writeCommitToFile(initialCommit);
-
-        // create Master
-        // create HEAD
-        String id = initialCommit.getId();
-        // String branchName = "master";
-        File defaultBranch = join(HEADS_DIR, DEFAULT_BRANCH);
-        writeContents(defaultBranch, id); // .gitlet/refs/heads/master
-        writeContents(HEAD, DEFAULT_BRANCH); // .gitlet/HEAD
-        writeContents(CONFIG, "");
+        initReference(initialCommit.getId());
+        // init config file required firsttly.
+        createConfigFile();
     }
+
 
     private void createInitDir() {
         // Need to pay attention to the order
         GITLET_DIR.mkdir();
         OBJECTS_DIR.mkdir();
-        writeObject(STAGE, new Stage());
         STAGING_DIR.mkdir();
         BLOBS_DIR.mkdir();
         COMMIT_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
         REMOTES_DIR.mkdir();
+        createStage();
     }
 
     public void checkInit() {
@@ -155,22 +149,26 @@ public class Repository {
     }
 
     /** 
+     * <pre>
      * 1. staging the file for addition
+     * (adding a file is also called staging the file for addition.)
      * 2. If the current working version of the file is identical
      * to the version in the current commit, do not stage it to be added
      * and remove it from the staging area if it is already there(
      * as can happen when a file is changed, added, and then changed
      * back to it’s original version)
+     * <pre>
      * @param fileName added file name.
      */
     public void add(String fileName) {
-        File file = join(CWD, fileName); // get file from CWD
+        // get file from CWD
+        File file = join(CWD, fileName);
         if (!file.exists()) {
             exit("File does not exist.");
         }
 
-        Blob blob = new Blob(fileName, CWD); // using file name to instance this blob.
-        String blobId = blob.getId();
+        Blob cwdBlob = new Blob(fileName, CWD); // using file name to instance this blob.
+        String cwdBlobId = cwdBlob.getId();
 
         // gettheHeadCommit
         // using file name to find file in current Commit.
@@ -179,26 +177,19 @@ public class Repository {
         String stageBlobId = stage.get().getAdded().getOrDefault(fileName, "");
 
         // the current working version of the file is identical to 
-        // the version in the current commit do not stage it be added.
-        // and remove it from the staging area if it is already there
-        if (blobId.equals(headBlobId)) {
+        // the version in the current commit do not stage it be added
+        // and remove it from the staging area if it is already there.
+        if (cwdBlobId.equals(headBlobId)) {
             // delete the file from staging
             join(STAGING_DIR, stageBlobId).delete();
 
             stage.get().getAdded().remove(fileName);
             stage.get().getRemoved().remove(fileName);
             writeStage(stage.get());
-        } else if (!blobId.equals(stageBlobId)) {
+        } else if (!cwdBlobId.equals(stageBlobId)) {
             // update new version
-
-            // check no file
-            if (!stageBlobId.equals("")) {
-                join(STAGING_DIR, stageBlobId).delete();
-            }
-            writeBlobToStaging(blobId, blob);
-
-            stage.get().add(fileName, blobId);
-            writeStage(stage.get());
+            writeBlobToStaging(cwdBlobId, cwdBlob);
+            updateStageAddedBlob(fileName, cwdBlobId);
         }
     }
 
@@ -206,37 +197,31 @@ public class Repository {
         if (msg.equals("")) {
             exit("Please enter a commit message.");
         }
-        // get the current commit
-        // get the stage
-        // gettheHeadCommit
         commitWith(msg, List.of(head.get()));
     }
 
     public void rm(String fileName) {
-        File file = join(CWD, fileName);
-
         String headBlobId = head.get().getBlobs().getOrDefault(fileName, "");
         String stageBlobId = stage.get().getAdded().getOrDefault(fileName, "");
-
         if (headBlobId.equals("") && stageBlobId.equals("")) {
             exit("No reason to remove the file.");
         }
 
         // Unstage the file if it is currently staged for addition.
         if (!stageBlobId.equals("")) {
-            stage.get().getAdded().remove(fileName);
+            unstageBlob(fileName);
         } else {
-            // stage it for removal
-            stage.get().getRemoved().add(fileName);
+            stageForRemoved(fileName);
         }
 
-        Blob blob = new Blob(fileName, CWD);
-        String blobId = blob.getId();
+        Blob cwdBlob = new Blob(fileName, CWD);
+        String cwdBlobId = cwdBlob.getId();
+        File file = join(CWD, fileName);
         // If the file is tracked in the current
-        // commit, stage it for removal(done in last condition, untracked means )
+        // commit, stage it for removal(done in last condition, untracked means)
         // and remove the file from the working directory
         // if the user has not already done so
-        if (blobId.equals(headBlobId)) {
+        if (cwdBlobId.equals(headBlobId)) {
             // remove the file from the working directory
             restrictedDelete(file);
         }
@@ -245,87 +230,61 @@ public class Repository {
     }
 
     public void log() {
-        StringBuffer sb = new StringBuffer();
-        Commit commit = getHead();
-        while (commit != null) {
-            sb.append(commit.getCommitAsString());
-            commit = getCommitFromId(commit.getFirstParentId());
-        }
-
+        StringBuffer sb = logIteratorFromHead(head.get());
         System.out.print(sb);
     }
 
     public void globalLog() {
-        StringBuffer sb = new StringBuffer();
-        List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
-        for (String fileName : fileNames) {
-            Commit commit = getCommitFromId(fileName); // at this time, file name == commit id.
-            sb.append(commit.getCommitAsString());
-        }
+        StringBuffer sb = logAllCommit();
         System.out.println(sb);
     }
 
     public void find(String msg) {
-        StringBuffer sb = new StringBuffer();
-        List<String> fileNames = plainFilenamesIn(COMMIT_DIR);
-        for (String fileName: fileNames) {
-            Commit commit = getCommitFromId(fileName);
-            if (commit.getMessage().contains(msg)) {
-                sb.append(commit.getId() + "\n");
-            }
-        }
+        StringBuffer sb = getCommitAsStringByMsg(msg);
         if (sb.length() == 0) {
             exit("Found no commit with that message.");
         }
         System.out.println(sb);
     }
 
+    private StringBuffer getCommitAsStringByMsg(String msg) {
+        StringBuffer sb = new StringBuffer();
+        List<String> commitsFileNames = plainFilenamesIn(COMMIT_DIR);
+        for (String fileName: commitsFileNames) {
+            Commit commit = getCommitFromId(fileName);
+            if (commit.getMessage().contains(msg)) {
+                sb.append(commit.getId() + "\n");
+            }
+        }
+        return sb;
+    }
+
     public void status() {
         StringBuffer sb = new StringBuffer();
 
         sb.append("=== Branches ===\n");
-        String headBranch = readContentsAsString(HEAD);
-        List<String> branches = plainFilenamesIn(HEADS_DIR);
-        for (String branch : branches) {
-            if (branch.equals(headBranch)) {
-                sb.append("*" + branch + "\n");
-            } else {
-                sb.append(branch + "\n");
-            }
-        }
+        appendBranch(sb);
         sb.append("\n");
 
         sb.append("=== Staged Files ===\n");
-        for (String fileName : stage.get().getAdded().keySet()) {
-            sb.append(fileName + "\n");
-        }
+        appendStagedFiles(sb);
         sb.append("\n");
 
         sb.append("=== Removed Files ===\n");
-        for (String fileName : stage.get().getRemoved()) {
-            sb.append(fileName + "\n");
-        }
+        appendRemovedFiles(sb);
         sb.append("\n");
 
         sb.append("=== Modifications Not Staged For Commit ===\n");
-        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranch), stage.get());
-        for (String str : modifiedFiles) {
-            sb.append(str + "\n");
-        }
+        appenendMNSFC(sb);
         sb.append("\n");
+
         sb.append("=== Untracked Files ===\n");
-        List<String> untrackedFiles = getUntrackedFiles();
-        for (String filename : untrackedFiles) {
-            sb.append(filename + "\n");
-        }
+        appendUntrackedFiles(sb);
         sb.append("\n");
 
         System.out.println(sb);
-    } 
+    }
 
-    // checkoutBranch(args[1]);
-    // Repository.checkoutFileFromHead(args[2]);
-    // Repository.checkoutFileFromCommitId(args[3]);
 
     // Differences from real git: Real git does not clear
     // the staging area and stages the file that is checked out.
@@ -359,7 +318,7 @@ public class Repository {
         replaceWorkingPlaceWithCommit(otherCommit);
 
         // the given branch will now be considered the current branch (HEAD).
-        writeContents(HEAD, branchName);
+        writeHEAD(branchName);
     }
 
     /**
@@ -397,7 +356,7 @@ public class Repository {
 
         // points it at the current head commit.
         String commitId = getHeadCommitId();
-        writeContents(branchFile, commitId);
+        writeBranch(branchFile, commitId);
     }
 
     /**
@@ -440,7 +399,7 @@ public class Repository {
         clearStage(readStage());
 
         // Also moves the current branch’s head to that commit node.
-        writeContents(join(HEADS_DIR, headBranchName.get()), commitId);
+        writeBranch(join(HEADS_DIR, headBranchName.get()), commitId);
     }
 
     /**
@@ -467,7 +426,6 @@ public class Repository {
         if (!otherBranchFile.exists()) {
             exit("A branch with that name does not exist.");
         }
-
 
         if (headBranchName.get().equals(otherBranchName)) {
             exit("Cannot merge a branch with itself.");
@@ -511,11 +469,11 @@ public class Repository {
      * @param remotePath
      */
     public void addRemote(String remoteName,  String remotePath) {
-        File remote = join(REMOTES_DIR, remoteName);
-        if (remote.exists()) {
+        File remoteFile = join(REMOTES_DIR, remoteName);
+        if (remoteFile.exists()) {
             exit("A remote with that name already exists.");
         }
-        remote.mkdir();
+        remoteFile.mkdir();
 
         // java.io.File.separator
         if (File.separator.equals("\\")) {
@@ -676,6 +634,130 @@ public class Repository {
         merge(otherBranchName);
     }
 
+    private void writeBranch(File branchFile, String commitId) {
+        writeContents(branchFile, commitId);
+    }
+
+    /**
+     * write branch name to HEAD.
+     * @param branchName
+     */
+    private void writeHEAD(String branchName) {
+        writeContents(HEAD, branchName);
+    }
+
+
+    private void appendUntrackedFiles(StringBuffer sb) {
+        List<String> untrackedFiles = getUntrackedFiles();
+        for (String filename : untrackedFiles) {
+            sb.append(filename + "\n");
+        }
+    }
+
+    private void appenendMNSFC(StringBuffer sb) {
+        List<String> modifiedFiles = getModifiedFiles(getCommitFromBranchName(headBranchName.get()), stage.get());
+        for (String str : modifiedFiles) {
+            sb.append(str + "\n");
+        }
+    }
+
+    private void appendRemovedFiles(StringBuffer sb) {
+        for (String fileName : stage.get().getRemoved()) {
+            sb.append(fileName + "\n");
+        }
+    }
+
+    private void appendStagedFiles(StringBuffer sb) {
+        for (String fileName : stage.get().getAdded().keySet()) {
+            sb.append(fileName + "\n");
+        }
+    }
+
+    private void appendBranch(StringBuffer sb) {
+        List<String> branches = plainFilenamesIn(HEADS_DIR);
+        for (String branch : branches) {
+            if (branch.equals(headBranchName.get())) {
+                sb.append("*" + branch + "\n");
+            } else {
+                sb.append(branch + "\n");
+            }
+        }
+    }
+
+    /**
+     * log all commit file as string.
+     * @return String Buffer
+     */
+    private StringBuffer logAllCommit() {
+        StringBuffer sb = new StringBuffer();
+        List<String> commitsFileNames = plainFilenamesIn(COMMIT_DIR);
+        for (String fileName : commitsFileNames) {
+            // at this time, file name == commit id.
+            Commit commit = getCommitFromId(fileName); 
+            sb.append(commit.getCommitAsString());
+        }
+        return sb;
+    }
+
+    /**
+     * <pre>
+     * Get the commit String format from head to init commit 
+     * by Iterator help function.
+     * <pre>
+     * @param p
+     * @return
+     */
+    private StringBuffer logIteratorFromHead(Commit p) {
+        StringBuffer sb = new StringBuffer();
+        while (p != null) {
+            sb.append(p.getCommitAsString());
+            p = getCommitFromId(p.getFirstParentId());
+        }
+        return sb;
+    }
+
+
+    private void stageForRemoved(String fileName) {
+        stage.get().getRemoved().add(fileName);
+    }
+
+    private void unstageBlob(String fileName) {
+        stage.get().getAdded().remove(fileName);
+    }
+
+
+    /**
+     * Init a config file.
+     */
+    private void createConfigFile() {
+        writeContents(CONFIG, "");
+    }
+
+    /**
+     * update Stage's added(file name -> id) and serialize stage.
+     * @param fileName
+     * @param cwdBlobId
+     */
+    private void updateStageAddedBlob(String fileName, String cwdBlobId) {
+        stage.get().add(fileName, cwdBlobId);
+        writeStage(stage.get());
+    }
+
+
+    /**
+     * create Master and HEAD
+     * @param initialCommit
+     */
+    private void initReference(String id) {
+        File defaultBranchFile = join(HEADS_DIR, DEFAULT_BRANCH);
+        writeContents(defaultBranchFile, id); // .gitlet/refs/heads/master(defalut)
+        writeHEAD(DEFAULT_BRANCH); // .gitlet/HEAD
+    }
+
+    private void createStage() {
+        writeObject(STAGE, new Stage());
+    }
+
     /**
      * bfs get the history commits.
      * @param head
@@ -832,7 +914,7 @@ public class Repository {
         List<String> untrackedFiles = getUntrackedFiles();
         for (String fileName : untrackedFiles) {
             if (remove.contains(fileName) || rewrite.contains(fileName)
-                || conflict.contains(fileName)) {
+            || conflict.contains(fileName)) {
                 exit("There is an untracked file in the way;"
                     + " delete it, or add and commit it first.");
             }
@@ -1035,6 +1117,7 @@ public class Repository {
         return readObject(file, Blob.class);
     }
 
+    // TODO: with directory tries abs.
     /**
      * @param commit Commit Object which will be Serialized.
      */
