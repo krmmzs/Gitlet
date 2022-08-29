@@ -64,7 +64,7 @@ public class Commit implements Serializable {
      * filename, blob's id.
      * <pre>
      */
-    private HashMap<String, String> blobs;
+    private Map<String, String> blobs;
 
 
     public Commit() {
@@ -82,7 +82,7 @@ public class Commit implements Serializable {
         this.stage = stage;
     }
 
-    public HashMap<String, String> getBlobs() {
+    public Map<String, String> getBlobs() {
         if (this.blobs == null) {
             generateBlobs();
         }
