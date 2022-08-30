@@ -486,11 +486,7 @@ public class Repository {
             url = ..\\remotegit\\.git
             fetch = +refs/heads/*:refs/remotes/origin/*
          */
-        String contents = readContentsAsString(CONFIG);
-        contents += "[remote \"" + remoteName + "\"]\n";
-        contents += remotePath + "\n";
-
-        writeContents(CONFIG, contents);
+        addConfig(remoteName, remotePath);
     }
 
     /**
@@ -499,25 +495,14 @@ public class Repository {
      * @param remoteName
      */
     public void rmRemote(String remoteName) {
-        File remote = join(REMOTES_DIR, remoteName);
-        if (!remote.exists()) {
+        File remoteFile = join(REMOTES_DIR, remoteName);
+        if (!remoteFile.exists()) {
             exit("A remote with that name does not exist.");
         }
 
-        delFileRec(remote);
+        delFileRec(remoteFile);
 
-        String[] contents = readContentsAsString(CONFIG).split("\n");
-        String target = "[remote \"" + remoteName + "\"]";
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < contents.length;) {
-            if (contents[i].equals(target)) {
-                // skip content
-                i += 2;
-            } else {
-                sb.append(contents[i]);
-            }
-        }
-        writeContents(CONFIG, sb.toString());
+        rmConfig(remoteName);
     }
 
     /**
@@ -528,14 +513,14 @@ public class Repository {
      * @param branchName
      */
     public void push(String remoteName, String remoteBranchName) {
-        File remotePath = getRemotePath(remoteName);
-        Repository remote = new Repository(remotePath.getParent());
+        File remotePathFile = getRemotePath(remoteName);
+        Repository remote = new Repository(remotePathFile.getParent());
 
         Commit remoteHead = remote.getHead();
-        List<String> history = getHistory(head.get());
+        List<String> historyId = getHistoryId(head.get());
         // If the remote branch’s head is not in the
         // history of the current local head.
-        if (!history.contains(remoteHead.getId())) {
+        if (!historyId.contains(remoteHead.getId())) {
             exit("Please pull down remote changes before pushing.");
         }
 
@@ -547,27 +532,7 @@ public class Repository {
         }
 
         // append the future commits to the remote branch.
-        for (String commitId : history) {
-            // until the end of the given branch at the given remote.
-            if (commitId.equals(remoteHead.getId())) {
-                break;
-            }
-            Commit commit = getCommitFromId(commitId);
-            // cp commit's persisting contents.
-            File remoteCommit = join(remote.COMMIT_DIR, commitId);
-            writeObject(remoteCommit, commit);
-
-            // cp commit's blobs's persisting contents to remote.
-            if (!commit.getBlobs().isEmpty()) {
-                for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
-                    String blobId = entry.getValue();
-                    Blob blob = getBlobFromId(blobId);
-
-                    File remoteBlob = join(remote.BLOBS_DIR, blobId);
-                    writeObject(remoteBlob, blob);
-                }
-            }
-        }
+        pushCommit(remote, remoteHead, historyId);
 
         // Then, the remote should reset to the front of
         // the appended commits.
@@ -581,9 +546,9 @@ public class Repository {
      * @param remoteBranchName
      */
     public void fetch(String remoteName, String remoteBranchName) {
-        File remotePath = getRemotePath(remoteName);
+        File remotePathFile = getRemotePath(remoteName);
 
-        Repository remote = new Repository(remotePath.getParent());
+        Repository remote = new Repository(remotePathFile.getParent());
 
         File remoteBranchFile = remote.getBranchFile(remoteBranchName);
         if (remoteBranchFile == null || !remoteBranchFile.exists()) {
@@ -598,7 +563,7 @@ public class Repository {
 
         // copies all commits and blobs from the given
         // branch in the remote repository.
-        List<String> history = remote.getHistory(remoteBranchCommit);
+        List<String> history = remote.getHistoryId(remoteBranchCommit);
 
         for (String commitId : history) {
             Commit commit = remote.getCommitFromId(commitId);
@@ -632,6 +597,89 @@ public class Repository {
 
         String otherBranchName = remoteName + "/" + remoteBranchName;
         merge(otherBranchName);
+    }
+
+    /**
+     * Append the future commits to the remote branch.
+     * @param remoteHead
+     * @param history
+     */
+    private void pushCommit(Repository remote, Commit remoteHead, List<String> history) {
+        for (String commitId : history) {
+            // until the end of the given branch at the given remote.
+            if (commitId.equals(remoteHead.getId())) {
+                break;
+            }
+
+            Commit commit = getCommitFromId(commitId);
+            cpCommitToRemote(remote, commit, commitId);
+            cpCommitBlobsToRemote(remote, commit, commitId);
+        }
+    }
+
+    /**
+     * Cp commit persisting contents to remote.
+     * @param remote
+     * @param commit
+     * @param commitId
+     */
+    private void cpCommitToRemote(Repository remote, Commit commit, String commitId) {
+        File remoteCommitFile = join(remote.COMMIT_DIR, commitId);
+        writeObject(remoteCommitFile, commit);
+    }
+
+    /**
+     * Cp commit's blobs's persisting contents to remote.
+     * @param remote
+     * @param commit
+     * @param commitId
+     */
+    private void cpCommitBlobsToRemote(Repository remote, Commit commit, String commitId) {
+            if (!commit.getBlobs().isEmpty()) {
+                for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
+                    String blobId = entry.getValue();
+                    Blob blob = getBlobFromId(blobId);
+
+                    File remoteBlob = join(remote.BLOBS_DIR, blobId);
+                    writeObject(remoteBlob, blob);
+                }
+            }
+    }
+
+
+    /**
+     * Traverse matching remote name, and ignore(skip) successful matched value.
+     * @param remoteName
+     */
+    private void rmConfig(String remoteName) {
+        String[] contents = readContentsAsString(CONFIG).split("\n");
+        String target = "[remote \"" + remoteName + "\"]";
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < contents.length;) {
+            if (contents[i].equals(target)) {
+                // skip content
+                i += 2;
+            } else {
+                sb.append(contents[i]);
+            }
+        }
+        writeConfig(sb.toString());
+    }
+
+    /**
+     * Add new remote name and remote path to Config file.
+     * @param remoteName
+     * @param remotePath
+     */
+    private void addConfig(String remoteName, String remotePath) {
+        String contents = readContentsAsString(CONFIG);
+        contents += "[remote \"" + remoteName + "\"]\n";
+        contents += remotePath + "\n";
+        writeConfig(contents);
+    }
+
+    private void writeConfig(String contents) {
+        writeContents(CONFIG, contents);
     }
 
     private void writeBranch(File branchFile, String commitId) {
@@ -763,7 +811,7 @@ public class Repository {
      * @param head
      * @return
      */
-    private List<String> getHistory(Commit head) {
+    private List<String> getHistoryId(Commit head) {
         List<String> res = new LinkedList<>();
         Queue<Commit> queue = new LinkedList<>();
         queue.add(head);
