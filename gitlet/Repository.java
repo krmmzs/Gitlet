@@ -547,7 +547,6 @@ public class Repository {
      */
     public void fetch(String remoteName, String remoteBranchName) {
         File remotePathFile = getRemotePath(remoteName);
-
         Repository remote = new Repository(remotePathFile.getParent());
 
         File remoteBranchFile = remote.getBranchFile(remoteBranchName);
@@ -564,26 +563,7 @@ public class Repository {
         // copies all commits and blobs from the given
         // branch in the remote repository.
         List<String> history = remote.getHistoryId(remoteBranchCommit);
-
-        for (String commitId : history) {
-            Commit commit = remote.getCommitFromId(commitId);
-            File commitFile = join(COMMIT_DIR, commit.getId());
-            if (commitFile.exists()) {
-                continue;
-            }
-            writeObject(commitFile, commit);
-
-            if (commit.getBlobs().isEmpty()) {
-                continue;
-            }
-            for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
-                String blobId = entry.getValue();
-                Blob blob = remote.getBlobFromId(blobId);
-
-                File blobFile = join(BLOBS_DIR, blobId);
-                writeObject(blobFile, blob);
-            }
-        }
+        cpCommitAndBlobsFromRemote(remote, history);
     }
 
     /**
@@ -598,6 +578,31 @@ public class Repository {
         String otherBranchName = remoteName + "/" + remoteBranchName;
         merge(otherBranchName);
     }
+
+    /**
+     * copy commits and blobs from remote.
+     * @param remote
+     * @param history
+     */
+    private void cpCommitAndBlobsFromRemote(Repository remote, List<String> history) {
+        for (String commitId : history) {
+            Commit commit = remote.getCommitFromId(commitId);
+            File commitFile = join(COMMIT_DIR, commit.getId());
+            if (commitFile.exists()) {
+                continue;
+            }
+            writeObject(commitFile, commit);
+
+            for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
+                String blobId = entry.getValue();
+                Blob blob = remote.getBlobFromId(blobId);
+
+                File blobFile = join(BLOBS_DIR, blobId);
+                writeObject(blobFile, blob);
+            }
+        }
+    }
+
 
     /**
      * Append the future commits to the remote branch.
@@ -635,15 +640,15 @@ public class Repository {
      * @param commitId
      */
     private void cpCommitBlobsToRemote(Repository remote, Commit commit, String commitId) {
-            if (!commit.getBlobs().isEmpty()) {
-                for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
-                    String blobId = entry.getValue();
-                    Blob blob = getBlobFromId(blobId);
+        if (!commit.getBlobs().isEmpty()) {
+            for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
+                String blobId = entry.getValue();
+                Blob blob = getBlobFromId(blobId);
 
-                    File remoteBlob = join(remote.BLOBS_DIR, blobId);
-                    writeObject(remoteBlob, blob);
-                }
+                File remoteBlob = join(remote.BLOBS_DIR, blobId);
+                writeObject(remoteBlob, blob);
             }
+        }
     }
 
 
@@ -827,6 +832,11 @@ public class Repository {
         return res;
     }
 
+    /**
+     * Get remote path by remote name.
+     * @param remoteName
+     * @return
+     */
     private File getRemotePath(String remoteName) {
         String path = "";
         String[] contents = readContentsAsString(CONFIG).split("\n");
