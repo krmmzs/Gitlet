@@ -249,7 +249,11 @@ class Utils {
     }
 
     /**
+     * <pre>
+     * Returns a supplier which caches the instance retrieved during
+     * the first call to get() and returns that value on subsequent calls to get().
      * Get a lazy initialized value.
+     * <pre>
      *
      * @param delegate Function to get the value
      * @param <T>      Type of the value
