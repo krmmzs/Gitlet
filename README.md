@@ -1,6 +1,11 @@
 # Gitlet
 An independant implementation of a mini version of Git
 
+## Test
+
+more in
+[test.md](./testing/README.md)
+
 ## Information
 
 ### Real Git
